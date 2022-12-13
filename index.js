@@ -46,13 +46,18 @@ function parseGithubComment(comment) {
 
 
 function parseGithubCommand(comment) {
-  return comment.split("\n")[0].replace("@github-actions nim ", "nim r --import:std/prelude ")
+  let result = comment.split("\n")[0]
+  result = result.replace("@github-actions", "")
+  result = result.replace(" nim r ", "nim r --import:std/prelude ")
+  result = result.replace(" -r ", " ")
+  result = result.replace(" doc ", " ")
+  return result
 };
 
 
 
 if (context.eventName === "issue_comment") {
-  const commentPrefix = "@github-actions nim "
+  const commentPrefix = "@github-actions nim r "
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
 
