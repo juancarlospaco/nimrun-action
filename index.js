@@ -60,13 +60,14 @@ function parseGithubCommand(comment) {
 function executeShebangScript(cmd, codes) {
   fs.writeFileSync(temporaryFile, codes)
   console.log("COMMAND:\t", cmd)
+  let result = ""
   try {
-    let result = execSync(cmd).toString().trim()
+    result = execSync(cmd).toString().trim()
     addReaction(githubClient, "+1")
   } catch (error) {
     addReaction(githubClient, "-1")
     core.setFailed(error);
-    let result = ""
+    result = ""
   } finally {
     return result
   }
