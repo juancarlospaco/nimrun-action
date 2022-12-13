@@ -50,7 +50,7 @@ function parseGithubCommand(comment) {
   result = result.replace("@github-actions", "")
   result = result.replace(" nim r ", "nim r --import:std/prelude ")
   result = result.replace(" -r ", " ")
-  result = result.replace(" doc ", " ")
+  result = result + " /tmp/temp.nim"
   return result
 };
 
@@ -69,8 +69,7 @@ if (context.eventName === "issue_comment") {
       const codes = parseGithubComment(githubComment)
       if (codes.length > 0) {
         fs.writeFileSync("/tmp/temp.nim", codes)
-        const nimcr = parseGithubCommand(githubComment)
-        const cmd = `${nimcr} /tmp/temp.nim`
+        const cmd = parseGithubCommand(githubComment)
 
 
         console.warn(cmd);
@@ -78,7 +77,7 @@ if (context.eventName === "issue_comment") {
       if (codes.length > 0 && cmd.length > 0) {
         // Add Reaction of Eyes as seen.
         if (addReaction(githubClient, "eyes")) {
-          console.warn(codes);
+          // console.warn(codes);
         }
       }
     }
