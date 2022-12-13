@@ -60,16 +60,11 @@ function parseGithubCommand(comment) {
 function executeShebangScript(cmd, codes) {
   fs.writeFileSync(temporaryFile, codes)
   console.log("COMMAND:\t", cmd)
-  let result = ""
   try {
-    result = execSync(cmd).toString().trim()
-    addReaction(githubClient, "+1")
+    return execSync(cmd).toString().trim()
   } catch (error) {
-    addReaction(githubClient, "-1")
-    core.setFailed(error);
-    result = ""
-  } finally {
-    return result
+    core.setFailed(error)
+    return ""
   }
 }
 
@@ -89,7 +84,7 @@ if (context.eventName === "issue_comment") {
       if (addReaction(githubClient, "eyes")) {
         const output = executeShebangScript(cmd, codes)
         console.log("OK_OUTPUT\t", output)
-        if (output.length > 0) {
+        if addReaction(githubClient, (if (output.length > 0) { "+1" } else { "-1" })) {
           console.warn("HERE");
         }
       }
