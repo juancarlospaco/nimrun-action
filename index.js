@@ -76,7 +76,7 @@ async function executeShebangScript(cmd, codes) {
 
 
 if (context.eventName === "issue_comment") {
-  const commentPrefix = "@github-actions nim r "
+  const commentPrefix = "@github-actions nim r"
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
   // Check if we have permissions.
