@@ -1,0 +1,16 @@
+name: 'nimrun-action'
+description: 'Nim run GitHub Action'
+inputs:
+inputs:
+  github-token:
+    description: 'GitHub token'
+    required:    true
+  allowed-associations:
+    description: Comment author associations allowed to execute scripts (e.g. '["OWNER", "COLLABORATOR"]')
+    default:     '["OWNER", "COLLABORATOR"]'
+runs:
+  using: 'node16'
+  main:  'index.js'
+branding:
+  icon:  'eye'
+  color: 'yellow'

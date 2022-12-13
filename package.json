@@ -1,0 +1,26 @@
+{
+  "name": "nimrun-action",
+  "version": "0.0.1",
+  "description": "Nim run GitHub Action",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juancarlospaco/nimrun-action.git"
+  },
+  "keywords": [
+    "nim"
+  ],
+  "author": "Juan Carlos",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core":   "^1.2.6",
+    "@actions/github": "^1.2.6",
+    "child_process":   "^1.0.2",
+    "fs":              "0.0.1-security",
+    "path":            "^0.12.7"
+  },
+  "bugs": {
+    "url": "https://github.com/juancarlospaco/nimrun-action/issues"
+  },
+  "homepage": "https://github.com/juancarlospaco/nimrun-action#readme"
+}
