@@ -1,5 +1,6 @@
 'use strict';
 const fs       = require('fs');
+const os       = require('os');
 const path     = require('path');
 const core     = require('@actions/core');
 const { exec } = require('child_process');
@@ -50,20 +51,19 @@ function parseGithubCommand(comment) {
   result = result.replace("@github-actions", "")
   result = result.replace("nim r ", "nim r --import:std/prelude ")
   result = result.replace(" -r ", " ")
-  result = result + " ./temp.nim"
+  result = `${ result } ${ os.tmpdir() }/temp.nim`
   return result.trim()
 };
 
 
 async function executeShebangScript(cmd, codes) {
-  const pat = "./temp.nim"
+  const pat = `${ os.tmpdir() }/temp.nim`
   try {
     fs.writeFileSync(pat, codes)
-    fs.chmodSync(pat, 0o777)
     // await exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
     console.log("COMMAND:\t", cmd)
     console.log("CODE:\t", fs.readFileSync(pat).toString() )
-    await exec(cmd, (err, stdout, stderr) => {
+    exec(cmd, (err, stdout, stderr) => {
       if (err) {
         core.setFailed(`${stderr} ${stdout} ${err}`);
         return;
