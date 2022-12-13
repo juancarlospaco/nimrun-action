@@ -3,7 +3,7 @@ const fs       = require('fs');
 const os       = require('os');
 const path     = require('path');
 const core     = require('@actions/core');
-const { exec } = require('child_process');
+const { execSync } = require('child_process');
 const {context, GitHub} = require('@actions/github')
 const marked = require('marked')
 const temporaryFile = `${ process.cwd() }/temp.nim`
@@ -60,18 +60,7 @@ function parseGithubCommand(comment) {
 function executeShebangScript(cmd, codes) {
   fs.writeFileSync(temporaryFile, codes)
   console.log("COMMAND:\t", cmd)
-  let nimexec = exec(cmd, (err, stdout, stderr) => {
-    if (err !== null) {
-      core.setFailed(`${stderr} ${stdout} ${err}`);
-      return ""
-    }
-    console.log("OK_STDERR:\t", stderr);
-    console.log("OK_STDOUT\t", stdout);
-    return stdout.trim()
-  });
-  let result = nimexec.stdout
-  console.log("OK_RESULT_TYPE\t", typeof(result));
-  return result
+  return execSync(cmd).toString().trim()
 }
 
 
