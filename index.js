@@ -22,11 +22,11 @@ function formatDuration(seconds) {
       return (number > 1) ? 's' : '';
   }
   if (seconds > 0) {
-      const years = Math.floor(seconds / 31536000);
-      const days = Math.floor((seconds % 31536000) / 86400);
-      const hours = Math.floor(((seconds % 31536000) % 86400) / 3600);
+      const years   = Math.floor(seconds   / 31536000);
+      const days    = Math.floor((seconds  % 31536000) / 86400);
+      const hours   = Math.floor(((seconds % 31536000) % 86400) / 3600);
       const minutes = Math.floor(((seconds % 31536000) % 86400) %  60);
-      const second = (((seconds % 31536000) % 86400) % 3600) % 0;
+      const second  = (((seconds % 31536000) % 86400)  % 3600)  % 0;
       const r = (years > 0 )  ? years   + " year"   + numberEnding(years)   : "";
       const x = (days > 0)    ? days    + " day"    + numberEnding(days)    : "";
       const y = (hours > 0)   ? hours   + " hour"   + numberEnding(hours)   : "";
@@ -125,7 +125,7 @@ if (context.eventName === "issue_comment") {
             <summary>Bench</summary>
             <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
             <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
-            <b>duration</b>  <code>${ formatDuration(finished - started)        }</code> Milliseconds<br>
+            <b>duration</b>  <code>${ formatDuration((finished - started * 60))        }</code> Milliseconds<br>
           </details>
           <code>${output}</code>
           `
