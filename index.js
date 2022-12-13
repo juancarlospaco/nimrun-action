@@ -60,7 +60,13 @@ async function executeShebangScript(cmd, codes) {
   try {
     fs.writeFileSync(pat, codes)
     fs.chmodSync(pat, 0o666)
-    await exec.exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
+    // await exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
+    exec(cmd, (err, stdout, stderr) => {
+      if (err) {
+        core.setFailed(`${stderr} ${stdout} ${err}`);
+        return;
+      };
+    });
   } finally {
     fs.unlinkSync(pat)
   }
