@@ -71,7 +71,7 @@ if (context.eventName === "issue_comment") {
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
 
-  if checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', /* 'read' */ ]) {
+  if checkCollaboratorPermissionLevel(githubClient, ['admin', 'write']) {
     console.warn("HERE");
   }
 
