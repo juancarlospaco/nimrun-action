@@ -63,16 +63,13 @@ function executeShebangScript(cmd, codes) {
   let result = ""
   exec(cmd, (err, stdout, stderr) => {
     if (err !== null) {
-      // core.setFailed(`${stderr} ${stdout} ${err}`);
-      console.log("ER_ERR:\t", err);
-      console.log("ER_STDERR:\t", stderr);
-      console.log("ER_STDOUT\t", stdout);
+      core.setFailed(`${stderr} ${stdout} ${err}`);
       result = ""
     }
     console.log("OK_ERR:\t", err);
     console.log("OK_STDERR:\t", stderr);
     console.log("OK_STDOUT\t", stdout);
-    result = stdout.toString().trim()
+    result = "" + stdout
   });
   return result
 }
