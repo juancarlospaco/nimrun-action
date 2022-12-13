@@ -57,6 +57,7 @@ if (context.eventName === "issue_comment") {
     if (githubComment.startsWith(commentPrefix)) {
       const codes = parseGithubComment(githubComment)
       const cmd = githubComment.split("\n")[0]
+      console.warn(cmd);
       // Check if the codes is not empty string.
       if (codes.length > 0 && cmd.length > 0) {
         // Add Reaction of Eyes as seen.
