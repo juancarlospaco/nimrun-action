@@ -66,10 +66,10 @@ function executeShebangScript(cmd, codes) {
       core.setFailed(`${stderr} ${stdout} ${err}`);
       result = ""
     }
-    console.log("OK_ERR:\t", err);
     console.log("OK_STDERR:\t", stderr);
     console.log("OK_STDOUT\t", stdout);
-    result = "" + stdout
+    console.log("OK_STDOUT_TYPE\t", typeOf(stdout));
+    result = stdout.toString()
   });
   return result
 }
