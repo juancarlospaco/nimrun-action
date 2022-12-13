@@ -35,23 +35,15 @@ async function addReaction(githubClient, reaction) {
 };
 
 
-async function addReaction(githubClient, reaction) {
-  return (await githubClient.reactions.createForIssueComment({
-    comment_id: context.payload.comment.id,
-    content   : reaction,
-    owner     : context.repo.owner,
-    repo      : context.repo.repo,
-  }) !== undefined)
-};
-// Parse the comment
-const tokens = marked.Lexer.lex(comment)
-for (const token of tokens) {
-  if (token.type === 'code' && token.lang === 'nim' && token.text.length > 0) {
-    const nimCode = token.text.trim()
-    // Execute script with shebang
-    await executeShebangScript(nimCode)
+function parseGithubComment(comment) {
+  const tokens = marked.Lexer.lex(comment)
+  for (const token of tokens) {
+    if (token.type === 'code' && token.lang === 'nim' && token.text.length > 0) {
+      return token.text.trim()
+    }
   }
-}
+};
+
 
 if (context.eventName === "issue_comment") {
   const commentPrefix = "@github-actions run"
@@ -62,7 +54,8 @@ if (context.eventName === "issue_comment") {
     const githubComment = context.payload.comment.body.trim()
     if (githubComment.startsWith(commentPrefix)) {
       if (addReaction(githubClient, "eyes")) {
-        console.warn("HERE!!!");
+        const codes = parseGithubComment(comment)
+        console.warn(codes);
       }
 
     }
