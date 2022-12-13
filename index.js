@@ -4,6 +4,7 @@ const path     = require('path');
 const core     = require('@actions/core');
 const { exec } = require('child_process');
 const {context, GitHub} = require('@actions/github')
+const marked = require('marked')
 
 
 const cfg = (key) => {
@@ -33,6 +34,24 @@ async function addReaction(githubClient, reaction) {
   }) !== undefined)
 };
 
+
+async function addReaction(githubClient, reaction) {
+  return (await githubClient.reactions.createForIssueComment({
+    comment_id: context.payload.comment.id,
+    content   : reaction,
+    owner     : context.repo.owner,
+    repo      : context.repo.repo,
+  }) !== undefined)
+};
+// Parse the comment
+const tokens = marked.Lexer.lex(comment)
+for (const token of tokens) {
+  if (token.type === 'code' && token.lang === 'nim' && token.text.length > 0) {
+    const nimCode = token.text.trim()
+    // Execute script with shebang
+    await executeShebangScript(nimCode)
+  }
+}
 
 if (context.eventName === "issue_comment") {
   const commentPrefix = "@github-actions run"
