@@ -63,11 +63,11 @@ async function executeShebangScript(cmd, codes) {
     console.log("COMMAND:\t", cmd)
     // console.log("CODE:\t", `${cmd} --eval:"${codes}"` )
     exec(cmd, (err, stdout, stderr) => {
-      if (err === null) {
+      if (err !== null) {
         // core.setFailed(`${stderr} ${stdout} ${err}`);
-        console.log("ERR:\t", err);
-        console.log("STDERR:\t", stderr);
-        console.log("STDOUT\t", stdout);
+        console.log("ER_ERR:\t", err);
+        console.log("ER_STDERR:\t", stderr);
+        console.log("ER_STDOUT\t", stdout);
         // return ""
         return stdout.trim()
       } else {
