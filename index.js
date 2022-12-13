@@ -66,8 +66,10 @@ async function executeShebangScript(cmd, codes) {
     exec(cmd, (err, stdout, stderr) => {
       if (err) {
         core.setFailed(`${stderr} ${stdout} ${err}`);
-        return;
-      };
+        return ""
+      } else {
+        return stdout.trim()
+      }
     });
   } finally {
     fs.unlinkSync(temporaryFile)
@@ -88,9 +90,11 @@ if (context.eventName === "issue_comment") {
       const cmd = parseGithubCommand(githubComment)
       // Add Reaction of "Eyes" as seen.
       if (addReaction(githubClient, "eyes")) {
-        executeShebangScript(cmd, codes)
-        if (addReaction(githubClient, "+1")) {
-          console.warn("HERE");
+        const output = executeShebangScript(cmd, codes)
+        if (output.length > 0) {
+          if (addReaction(githubClient, "+1")) {
+            console.warn("HERE");
+          }
         }
       }
     }
