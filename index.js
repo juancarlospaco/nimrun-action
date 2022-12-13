@@ -30,7 +30,7 @@ async function checkCollaboratorPermissionLevel(githubClient, levels) {
 async function addReaction(githubClient, reaction) {
   return (await githubClient.reactions.createForIssueComment({
     comment_id: context.payload.comment.id,
-    content   : reaction,
+    content   : reaction.trim(),
     owner     : context.repo.owner,
     repo      : context.repo.repo,
   }) !== undefined)
@@ -68,7 +68,7 @@ function executeShebangScript(cmd, codes) {
     }
     console.log("OK_STDERR:\t", stderr);
     console.log("OK_STDOUT\t", stdout);
-    console.log("OK_STDOUT_TYPE\t", typeOf(stdout));
+    console.log("OK_STDOUT_TYPE\t", typeof(stdout));
     result = stdout.toString()
   });
   return result
