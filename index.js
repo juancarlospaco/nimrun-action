@@ -125,7 +125,7 @@ if (context.eventName === "issue_comment") {
             <summary>Bench</summary>
             <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
             <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
-            <b>duration</b>  <code>${ formatDuration((finished - started * 60))        }</code> Milliseconds<br>
+            <b>duration</b>  <code>${ (finished - started * 60) }</code> seconds (${ formatDuration((finished - started * 60)) })<br>
           </details>
           <code>${output}</code>
           `
