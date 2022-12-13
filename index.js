@@ -49,7 +49,7 @@ function parseGithubComment(comment) {
 function parseGithubCommand(comment) {
   let result = comment.split("\n")[0].trim()
   result = result.replace("@github-actions", "")
-  result = result.replace("nim r ", "nim r --import:std/prelude ")
+  // result = result.replace("nim r ", "nim r --import:std/prelude ")
   result = result.replace(" -r ", " ")
   result = `${ result } ${ process.cwd() }/temp.nim`
   return result.trim()
