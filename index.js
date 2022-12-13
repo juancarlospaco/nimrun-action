@@ -59,7 +59,7 @@ async function executeShebangScript(cmd, codes) {
   const pat = "/tmp/temp.nim"
   try {
     fs.writeFileSync(pat, codes)
-    fs.chmodSync(pat, 0o666)
+    // fs.chmodSync(pat, 0o666)
     // await exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
     exec(cmd, (err, stdout, stderr) => {
       if (err) {
