@@ -84,12 +84,7 @@ if (context.eventName === "issue_comment") {
       if (addReaction(githubClient, "eyes")) {
         const output = executeShebangScript(cmd, codes)
         console.log("OK_OUTPUT\t", output)
-        let emoji = "-1"
-        if (output.length > 0) {
-          emoji = "+1"
-        }
-        console.log("OK_EMOJI\t", emoji)
-        if (addReaction(githubClient, emoji)) {
+        if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
           console.warn("HERE");
         }
       }
