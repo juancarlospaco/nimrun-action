@@ -45,6 +45,11 @@ function parseGithubComment(comment) {
 };
 
 
+function parseGithubCommand(comment) {
+  return comment.split("\n")[0].replace("@github-actions nim ", "nim r --import:std/prelude ")
+};
+
+
 
 if (context.eventName === "issue_comment") {
   const commentPrefix = "@github-actions nim "
@@ -57,17 +62,18 @@ if (context.eventName === "issue_comment") {
     // Check if github comment starts with commentPrefix.
     if (githubComment.startsWith(commentPrefix)) {
       const codes = parseGithubComment(githubComment)
-      const nimcr = githubComment.split("\n")[0].replace("@github-actions ", "")
-      const cmd = `${nimcr} r --import:std/prelude --eval:"${nimcr}"`
+      if (codes.length > 0) {
+        fs.writeFileSync("/tmp/temp.nim", codes)
+        const nimcr = parseGithubCommand(githubComment)
+        const cmd = `${nimcr} /tmp/temp.nim`
 
 
-      console.warn(cmd);
+        console.warn(cmd);
       // Check if the codes is not empty string.
       if (codes.length > 0 && cmd.length > 0) {
         // Add Reaction of Eyes as seen.
         if (addReaction(githubClient, "eyes")) {
           console.warn(codes);
-          console.warn(cmd);
         }
       }
     }
