@@ -75,7 +75,7 @@ async function executeShebangScript(cmd, codes) {
       }
     });
   } finally {
-    fs.unlinkSync(temporaryFile)
+    // fs.unlinkSync(temporaryFile)
   }
 }
 
