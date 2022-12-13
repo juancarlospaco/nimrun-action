@@ -14,6 +14,16 @@ const cfg = (key) => {
 };
 
 
+async function checkCollaboratorPermissionLevel(githubClient, levels) {
+  const permissionRes = await githubClient.repos.getCollaboratorPermissionLevel({
+    owner   : context.repo.owner,
+    repo    : context.repo.repo,
+    username: context.actor,
+  })
+  return (permissionRes.status === 200 && levels.includes(permissionRes.data.permission))
+};
+
+
 // const walk = (startPath, callback) => {
 //   console.assert(startPath.length > 0);
 //   var counter = 0;
@@ -60,16 +70,11 @@ const cfg = (key) => {
 if (context.eventName === "issue_comment") {
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
-  const permissionRes = await githubClient.repos.getCollaboratorPermissionLevel({
-    owner   : context.repo.owner,
-    repo    : context.repo.repo,
-    username: context.actor,
-  })
-  if (permissionRes.status === 200) {
-    if (['admin', 'write', /* 'read' */ ].includes(permissionRes.data.permission)) {
-      console.warn("HERE");
-    }
+
+  if checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', /* 'read' */ ]) {
+    console.warn("HERE");
   }
+
 }
 
 
