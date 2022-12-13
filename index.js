@@ -101,9 +101,9 @@ if (context.eventName === "issue_comment") {
           const comment = `
           <details>
             <summary>Bench</summary>
-            <b>started </b>  <code>${ started.toISOString()  }</code><br>
-            <b>finished</b>  <code>${ finished.toISOString() }</code><br>
-            <b>duration</b>  <code>${ finished - started     }</code> Milliseconds<br>
+            <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
+            <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
+            <b>duration</b>  <code>${ finished.getTime() - started.getTime()    }</code> Milliseconds<br>
           </details>
           <code>${output}</code>
           `
