@@ -60,17 +60,16 @@ function parseGithubCommand(comment) {
 function executeShebangScript(cmd, codes) {
   fs.writeFileSync(temporaryFile, codes)
   console.log("COMMAND:\t", cmd)
-  let result = ""
-  exec(cmd, (err, stdout, stderr) => {
+  let result = exec(cmd, (err, stdout, stderr) => {
     if (err !== null) {
       core.setFailed(`${stderr} ${stdout} ${err}`);
-      result = ""
+      return ""
     }
     console.log("OK_STDERR:\t", stderr);
     console.log("OK_STDOUT\t", stdout);
-    console.log("OK_STDOUT_TYPE\t", typeof(stdout));
-    result = stdout.toString()
+    return stdout.trim()
   });
+  console.log("OK_RESULT_TYPE\t", typeof(result));
   return result
 }
 
