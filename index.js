@@ -42,7 +42,7 @@ async function addIssueComment(githubClient, issueCommentBody) {
     issue_number: context.issue.number,
     owner       : context.repo.owner,
     repo        : context.repo.repo,
-    body        : "```\n" + issueCommentBody.trim() + "\n```",
+    body        : issueCommentBody.trim(),
   }) !== undefined)
 };
 
@@ -92,16 +92,19 @@ if (context.eventName === "issue_comment") {
       const cmd = parseGithubCommand(githubComment)
       // Add Reaction of "Eyes" as seen.
       if (addReaction(githubClient, "eyes")) {
-        const start = Date.now()
+        const start = performance.now()
         const output = executeShebangScript(cmd, codes)
-        const finished = Date.now()
+        const finished = performance.now()
         console.log("OK_OUTPUT\t", output)
         if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
           console.warn("HERE");
           const comment = `
+          <details>
+          <summary>Bench</summary>
           started\t${start}
           finished\t${finished}
           duration\t${finished - start}
+          </details>
           <code>${output}</code>
           `
           addIssueComment(githubClient, comment)
