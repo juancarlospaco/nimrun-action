@@ -42,7 +42,7 @@ async function addIssueComment(githubClient, issueCommentBody) {
     issue_number: context.issue.number,
     owner       : context.repo.owner,
     repo        : context.repo.repo,
-    body        : issueCommentBody.trim(),
+    body        : "```\n" + issueCommentBody.trim() + "```\n",
   }) !== undefined)
 };
 
