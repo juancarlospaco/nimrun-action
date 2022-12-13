@@ -37,6 +37,16 @@ async function addReaction(githubClient, reaction) {
 };
 
 
+async function addIssueComment(githubClient, issueCommentBody) {
+  return (await githubClient.issues.createComment({
+    issue_number: context.issue.number,
+    owner       : context.repo.owner,
+    repo        : context.repo.repo,
+    body        : issueCommentBody.trim(),
+  }) !== undefined)
+};
+
+
 function parseGithubComment(comment) {
   const tokens = marked.Lexer.lex(comment)
   for (const token of tokens) {
@@ -86,6 +96,7 @@ if (context.eventName === "issue_comment") {
         console.log("OK_OUTPUT\t", output)
         if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
           console.warn("HERE");
+          addIssueComment(githubClient, output)
         }
       }
     }
