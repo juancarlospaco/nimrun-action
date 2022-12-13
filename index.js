@@ -24,6 +24,29 @@ async function checkCollaboratorPermissionLevel(githubClient, levels) {
 };
 
 
+async function addReaction(githubClient, reaction) {
+  return (await githubClient.reactions.createForIssueComment({
+    comment_id: context.payload.comment.id,
+    content   : reaction,
+    owner     : context.repo.owner,
+    repo      : context.repo.repo,
+  }) !== undefined)
+};
+
+
+
+// Add :eyes: reaction
+const reactionRes = await githubClient.reactions.createForIssueComment({
+  comment_id: (context.payload as any).comment.id,
+  content   : 'eyes',
+  owner     : context.repo.owner,
+  repo      : context.repo.repo
+})
+.catch(err => {
+  // eslint-disable-next-line no-console
+  console.warn('Add-eyes-reaction failed: ', err)
+})
+
 // const walk = (startPath, callback) => {
 //   console.assert(startPath.length > 0);
 //   var counter = 0;
@@ -75,11 +98,12 @@ if (context.eventName === "issue_comment") {
   if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', 'read'])) {
     const githubComment = context.payload.comment.body.trim()
     if (githubComment.startsWith(commentPrefix)) {
-      console.warn("HERE");
+      if (addReaction(githubClient, "eyes")) {
+        console.warn("HERE!!!");
+      }
+
     }
-
   }
-
 }
 
 
