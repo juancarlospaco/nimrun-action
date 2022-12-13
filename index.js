@@ -127,7 +127,10 @@ if (context.eventName === "issue_comment") {
             <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
             <b>duration</b>  <code>${ finished - started }</code> milliseconds (${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) })<br>
           </details>
-          <code>${output}</code>
+          <details>
+            <summary>Output</summary>
+            <code>${output}</code>
+          </details>
           `
           addIssueComment(githubClient, comment)
         }
