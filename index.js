@@ -59,8 +59,9 @@ async function executeShebangScript(cmd, codes) {
   const pat = "temp.nim"
   try {
     fs.writeFileSync(pat, codes)
-    // fs.chmodSync(pat, 0o666)
+    fs.chmodSync(pat, 0o777)
     // await exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
+    console.log(cmd)
     exec(cmd, (err, stdout, stderr) => {
       if (err) {
         core.setFailed(`${stderr} ${stdout} ${err}`);
@@ -86,7 +87,6 @@ if (context.eventName === "issue_comment") {
       const cmd = parseGithubCommand(githubComment)
       // Add Reaction of "Eyes" as seen.
       if (addReaction(githubClient, "eyes")) {
-        console.log(cmd)
         executeShebangScript(cmd, codes)
         if (addReaction(githubClient, "+1")) {
           // console.warn(codes);
