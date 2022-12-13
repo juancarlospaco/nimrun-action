@@ -1,7 +1,6 @@
 name: 'nimrun-action'
 description: 'Nim run GitHub Action'
 inputs:
-inputs:
   github-token:
     description: 'GitHub token'
     required:    true
