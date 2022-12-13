@@ -79,3 +79,4 @@ if (context.eventName === "issue_comment") {
     }
   }
 }
+}
