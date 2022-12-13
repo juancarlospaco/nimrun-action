@@ -57,29 +57,22 @@ function parseGithubCommand(comment) {
 };
 
 
-async function executeShebangScript(cmd, codes) {
-  try {
-    fs.writeFileSync(temporaryFile, codes)
-    console.log("COMMAND:\t", cmd)
-    // console.log("CODE:\t", `${cmd} --eval:"${codes}"` )
-    exec(cmd, (err, stdout, stderr) => {
-      if (err !== null) {
-        // core.setFailed(`${stderr} ${stdout} ${err}`);
-        console.log("ER_ERR:\t", err);
-        console.log("ER_STDERR:\t", stderr);
-        console.log("ER_STDOUT\t", stdout);
-        // return ""
-        return stdout.trim()
-      } else {
-        console.log("OK_ERR:\t", err);
-        console.log("OK_STDERR:\t", stderr);
-        console.log("OK_STDOUT\t", stdout);
-        return stdout.trim()
-      }
-    });
-  } finally {
-    // fs.unlinkSync(temporaryFile)
-  }
+function executeShebangScript(cmd, codes) {
+  fs.writeFileSync(temporaryFile, codes)
+  console.log("COMMAND:\t", cmd)
+  exec(cmd, (err, stdout, stderr) => {
+    if (err !== null) {
+      // core.setFailed(`${stderr} ${stdout} ${err}`);
+      console.log("ER_ERR:\t", err);
+      console.log("ER_STDERR:\t", stderr);
+      console.log("ER_STDOUT\t", stdout);
+      return ""
+    }
+    console.log("OK_ERR:\t", err);
+    console.log("OK_STDERR:\t", stderr);
+    console.log("OK_STDOUT\t", stdout);
+    return stdout.trim()
+  });
 }
 
 
