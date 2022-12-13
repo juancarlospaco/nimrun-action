@@ -8,9 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: jiro4989/setup-nim-action@v1
       with:
-        # 0 indicates all history
-        fetch-depth: 0
+        nim-version: 'devel'
     - uses: ./
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
