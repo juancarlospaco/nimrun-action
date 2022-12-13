@@ -17,6 +17,28 @@ const cfg = (key) => {
 };
 
 
+function formatDuration(seconds) {
+  function numberEnding(number) {
+      return (number > 1) ? 's' : '';
+  }
+  if (seconds > 0) {
+      const years = Math.floor(seconds / 31536000);
+      const days = Math.floor((seconds % 31536000) / 86400);
+      const hours = Math.floor(((seconds % 31536000) % 86400) / 3600);
+      const minutes = Math.floor(((seconds % 31536000) % 86400) %  60);
+      const second = (((seconds % 31536000) % 86400) % 3600) % 0;
+      const r = (years > 0 )  ? years   + " year"   + numberEnding(years)   : "";
+      const x = (days > 0)    ? days    + " day"    + numberEnding(days)    : "";
+      const y = (hours > 0)   ? hours   + " hour"   + numberEnding(hours)   : "";
+      const z = (minutes > 0) ? minutes + " minute" + numberEnding(minutes) : "";
+      const u = (second > 0)  ? second  + " second" + numberEnding(second)  : "";
+      return r + x + y + z + u
+  } else {
+    return "now"
+  }
+}
+
+
 async function checkCollaboratorPermissionLevel(githubClient, levels) {
   const permissionRes = await githubClient.repos.getCollaboratorPermissionLevel({
     owner   : context.repo.owner,
@@ -103,7 +125,7 @@ if (context.eventName === "issue_comment") {
             <summary>Bench</summary>
             <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
             <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
-            <b>duration</b>  <code>${ finished.getTime() - started.getTime()    }</code> Milliseconds<br>
+            <b>duration</b>  <code>${ formatDuration(finished - started)        }</code> Milliseconds<br>
           </details>
           <code>${output}</code>
           `
