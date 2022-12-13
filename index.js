@@ -39,10 +39,11 @@ function parseGithubComment(comment) {
   const tokens = marked.Lexer.lex(comment)
   for (const token of tokens) {
     if (token.type === 'code' && token.lang === 'nim' && token.text.length > 0) {
-      return "include std/prelude\n" & token.text.trim()
+      return token.text.trim()
     }
   }
 };
+
 
 
 if (context.eventName === "issue_comment") {
@@ -56,7 +57,10 @@ if (context.eventName === "issue_comment") {
     // Check if github comment starts with commentPrefix.
     if (githubComment.startsWith(commentPrefix)) {
       const codes = parseGithubComment(githubComment)
-      const cmd = githubComment.split("\n")[0]
+      const nimcr = githubComment.split("\n")[0].replace("@github-actions ", "")
+      const cmd = `${nimcr} r --import:std/prelude --eval:"${nimcr}"`
+
+
       console.warn(cmd);
       // Check if the codes is not empty string.
       if (codes.length > 0 && cmd.length > 0) {
