@@ -92,18 +92,18 @@ if (context.eventName === "issue_comment") {
       const cmd = parseGithubCommand(githubComment)
       // Add Reaction of "Eyes" as seen.
       if (addReaction(githubClient, "eyes")) {
-        const started  = performance.now()
+        const started  = new Date()  // performance.now()
         const output   = executeShebangScript(cmd, codes)
-        const finished = performance.now()
+        const finished = new Date()  // performance.now()
         console.log("OK_OUTPUT\t", output)
         if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
           console.warn("HERE");
           const comment = `
           <details>
             <summary>Bench</summary>
-            <b>started </b>  <code>${started}</code><br>
-            <b>finished</b>  <code>${finished}</code><br>
-            <b>duration</b>  <code>${finished - started}</code><br>
+            <b>started </b>  <code>${ started.toUTCString()  }</code><br>
+            <b>finished</b>  <code>${ finished.toUTCString() }</code><br>
+            <b>duration</b>  <code>${ finished - started     }</code> Milliseconds<br>
           </details>
           <code>${output}</code>
           `
