@@ -46,41 +46,46 @@ function parseGithubComment(comment) {
 
 
 function parseGithubCommand(comment) {
-  let result = comment.split("\n")[0]
+  let result = comment.split("\n")[0].trim()
   result = result.replace("@github-actions", "")
-  result = result.replace(" nim r ", "nim r --import:std/prelude ")
+  result = result.replace("nim r ", "nim r --import:std/prelude ")
   result = result.replace(" -r ", " ")
   result = result + " /tmp/temp.nim"
-  return result
+  return result.trim()
 };
 
+
+async function executeShebangScript(cmd, codes) {
+  const pat = "/tmp/temp.nim"
+  try {
+    fs.writeFileSync(pat, codes)
+    fs.chmodSync(pat, 0o666)
+    await exec.exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
+  } finally {
+    fs.unlinkSync(pat)
+  }
+}
 
 
 if (context.eventName === "issue_comment") {
   const commentPrefix = "@github-actions nim r "
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
-
   // Check if we have permissions.
   if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', 'read'])) {
     const githubComment = context.payload.comment.body.trim()
     // Check if github comment starts with commentPrefix.
     if (githubComment.startsWith(commentPrefix)) {
       const codes = parseGithubComment(githubComment)
-      if (codes.length > 0) {
-        fs.writeFileSync("/tmp/temp.nim", codes)
-        const cmd = parseGithubCommand(githubComment)
-
-
-        console.warn(cmd);
-      // Check if the codes is not empty string.
-      if (codes.length > 0 && cmd.length > 0) {
-        // Add Reaction of Eyes as seen.
-        if (addReaction(githubClient, "eyes")) {
+      const cmd = parseGithubCommand(githubComment)
+      // Add Reaction of "Eyes" as seen.
+      if (addReaction(githubClient, "eyes")) {
+        console.log(cmd)
+        executeShebangScript(cmd, codes)
+        if (addReaction(githubClient, "+1")) {
           // console.warn(codes);
         }
       }
     }
   }
-}
 }
