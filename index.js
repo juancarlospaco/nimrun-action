@@ -60,7 +60,7 @@ function parseGithubCommand(comment) {
 function executeShebangScript(cmd, codes) {
   fs.writeFileSync(temporaryFile, codes)
   console.log("COMMAND:\t", cmd)
-  let result = exec(cmd, (err, stdout, stderr) => {
+  let nimexec = exec(cmd, (err, stdout, stderr) => {
     if (err !== null) {
       core.setFailed(`${stderr} ${stdout} ${err}`);
       return ""
@@ -69,6 +69,7 @@ function executeShebangScript(cmd, codes) {
     console.log("OK_STDOUT\t", stdout);
     return stdout.trim()
   });
+  let result = nimexec.stdout
   console.log("OK_RESULT_TYPE\t", typeof(result));
   return result
 }
