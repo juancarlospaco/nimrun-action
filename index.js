@@ -52,7 +52,7 @@ function parseGithubCommand(comment) {
   result = result.replace("@github-actions", "")
   // result = result.replace("nim r ", "nim r --import:std/prelude ")
   result = result.replace(" -r ", " ")
-  result = result + " " + temporaryFile
+  result = result // + " " + temporaryFile
   return result.trim()
 };
 
@@ -63,7 +63,7 @@ async function executeShebangScript(cmd, codes) {
     // await exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
     console.log("COMMAND:\t", cmd)
     console.log("CODE:\t", fs.readFileSync(temporaryFile).toString() )
-    exec(cmd, (err, stdout, stderr) => {
+    exec(`${cmd} --eval:"${codes}"`, (err, stdout, stderr) => {
       if (err) {
         // core.setFailed(`${stderr} ${stdout} ${err}`);
         console.log("ERR:\t", err);
