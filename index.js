@@ -62,7 +62,7 @@ async function executeShebangScript(cmd, codes) {
     fs.chmodSync(pat, 0o777)
     // await exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
     console.log("COMMAND:\t", cmd)
-    console.log("CODE:\t", fs.readFileSync(pat))
+    console.log("CODE:\t", fs.readFileSync(pat).toString() )
     exec(cmd, (err, stdout, stderr) => {
       if (err) {
         core.setFailed(`${stderr} ${stdout} ${err}`);
