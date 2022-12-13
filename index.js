@@ -39,14 +39,14 @@ function parseGithubComment(comment) {
   const tokens = marked.Lexer.lex(comment)
   for (const token of tokens) {
     if (token.type === 'code' && token.lang === 'nim' && token.text.length > 0) {
-      return token.text.trim()
+      return "include std/prelude\n" & token.text.trim()
     }
   }
 };
 
 
 if (context.eventName === "issue_comment") {
-  const commentPrefix = "@github-actions run"
+  const commentPrefix = "@github-actions nim "
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
 
@@ -56,11 +56,13 @@ if (context.eventName === "issue_comment") {
     // Check if github comment starts with commentPrefix.
     if (githubComment.startsWith(commentPrefix)) {
       const codes = parseGithubComment(githubComment)
+      const cmd = githubComment.split("\n")[0]
       // Check if the codes is not empty string.
-      if (codes.length > 0) {
+      if (codes.length > 0 && cmd.length > 0) {
         // Add Reaction of Eyes as seen.
         if (addReaction(githubClient, "eyes")) {
           console.warn(codes);
+          console.warn(cmd);
         }
       }
     }
