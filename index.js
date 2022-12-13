@@ -50,11 +50,15 @@ if (context.eventName === "issue_comment") {
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
 
+  // Check if we have permissions.
   if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', 'read'])) {
     const githubComment = context.payload.comment.body.trim()
+    // Check if github comment starts with commentPrefix.
     if (githubComment.startsWith(commentPrefix)) {
       const codes = parseGithubComment(githubComment)
+      // Check if the codes is not empty string.
       if (codes.length > 0) {
+        // Add Reaction of Eyes as seen.
         if (addReaction(githubClient, "eyes")) {
           console.warn(codes);
         }
