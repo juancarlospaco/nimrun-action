@@ -53,11 +53,12 @@ if (context.eventName === "issue_comment") {
   if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', 'read'])) {
     const githubComment = context.payload.comment.body.trim()
     if (githubComment.startsWith(commentPrefix)) {
-      if (addReaction(githubClient, "eyes")) {
-        const codes = parseGithubComment(comment)
-        console.warn(codes);
+      const codes = parseGithubComment(githubComment)
+      if (codes.length > 0) {
+        if (addReaction(githubClient, "eyes")) {
+          console.warn(codes);
+        }
       }
-
     }
   }
 }
