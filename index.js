@@ -102,9 +102,7 @@ if (context.eventName === "issue_comment") {
           started\t${start}
           finished\t${finished}
           duration\t${finished - start}
-          ```
-          ${output}
-          ```
+          <code>${output}</code>
           `
           addIssueComment(githubClient, comment)
         }
