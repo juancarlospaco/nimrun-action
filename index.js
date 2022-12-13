@@ -72,7 +72,7 @@ function executeShebangScript(cmd, codes) {
     console.log("OK_ERR:\t", err);
     console.log("OK_STDERR:\t", stderr);
     console.log("OK_STDOUT\t", stdout);
-    result = `${stdout}`.trim()
+    result = stdout.toString().trim()
   });
   return result
 }
