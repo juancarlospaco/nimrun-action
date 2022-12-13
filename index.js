@@ -68,7 +68,8 @@ async function executeShebangScript(cmd, codes) {
         console.log("ERR:\t", err);
         console.log("STDERR:\t", stderr);
         console.log("STDOUT\t", stdout);
-        return ""
+        // return ""
+        return stdout.trim()
       } else {
         console.log("OK_ERR:\t", err);
         console.log("OK_STDERR:\t", stderr);
