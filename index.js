@@ -6,6 +6,7 @@ const core     = require('@actions/core');
 const { exec } = require('child_process');
 const {context, GitHub} = require('@actions/github')
 const marked = require('marked')
+const temporaryFile = `${ process.cwd() }/temp.nim`
 
 
 const cfg = (key) => {
@@ -51,18 +52,17 @@ function parseGithubCommand(comment) {
   result = result.replace("@github-actions", "")
   // result = result.replace("nim r ", "nim r --import:std/prelude ")
   result = result.replace(" -r ", " ")
-  result = `${ result } ${ process.cwd() }/temp.nim`
+  result = result + " " + temporaryFile
   return result.trim()
 };
 
 
 async function executeShebangScript(cmd, codes) {
-  const pat = `${ process.cwd() }/temp.nim`
   try {
-    fs.writeFileSync(pat, codes)
+    fs.writeFileSync(temporaryFile, codes)
     // await exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
     console.log("COMMAND:\t", cmd)
-    console.log("CODE:\t", fs.readFileSync(pat).toString() )
+    console.log("CODE:\t", fs.readFileSync(temporaryFile).toString() )
     exec(cmd, (err, stdout, stderr) => {
       if (err) {
         core.setFailed(`${stderr} ${stdout} ${err}`);
@@ -70,7 +70,7 @@ async function executeShebangScript(cmd, codes) {
       };
     });
   } finally {
-    fs.unlinkSync(pat)
+    fs.unlinkSync(temporaryFile)
   }
 }
 
@@ -90,7 +90,7 @@ if (context.eventName === "issue_comment") {
       if (addReaction(githubClient, "eyes")) {
         executeShebangScript(cmd, codes)
         if (addReaction(githubClient, "+1")) {
-          // console.warn(codes);
+          console.warn("HERE");
         }
       }
     }
