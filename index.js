@@ -51,13 +51,13 @@ function parseGithubCommand(comment) {
   result = result.replace("@github-actions", "")
   result = result.replace("nim r ", "nim r --import:std/prelude ")
   result = result.replace(" -r ", " ")
-  result = `${ result } ${ os.tmpdir() }/temp.nim`
+  result = `${ result } ${ process.cwd() }/temp.nim`
   return result.trim()
 };
 
 
 async function executeShebangScript(cmd, codes) {
-  const pat = `${ os.tmpdir() }/temp.nim`
+  const pat = `${ process.cwd() }/temp.nim`
   try {
     fs.writeFileSync(pat, codes)
     // await exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
