@@ -65,7 +65,10 @@ async function executeShebangScript(cmd, codes) {
     console.log("CODE:\t", fs.readFileSync(temporaryFile).toString() )
     exec(cmd, (err, stdout, stderr) => {
       if (err) {
-        core.setFailed(`${stderr} ${stdout} ${err}`);
+        // core.setFailed(`${stderr} ${stdout} ${err}`);
+        console.log("ERR:\t", err);
+        console.log("STDERR:\t", stderr);
+        console.log("STDOUT\t", stdout);
         return ""
       } else {
         return stdout.trim()
