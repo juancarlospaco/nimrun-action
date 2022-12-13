@@ -1,4 +1,4 @@
-# Nimlint-Action
+<!-- # Nimlint-Action
 
 - [GitHub Action](https://github.com/features/actions) to auto-lint all your Nim source code files using [nimlint](https://github.com/nim-compiler-dev/nimlint).
 
@@ -61,4 +61,4 @@ Because some people already do it with just Git or Gitnim or Choosenim or setup-
 
 - Why not take care of commiting the files by itself?.
 
-Because some people already do it with `EndBug/add-and-commit` or `stefanzweifel/git-auto-commit-action` or `github-actions/auto-commit`.
+Because some people already do it with `EndBug/add-and-commit` or `stefanzweifel/git-auto-commit-action` or `github-actions/auto-commit`. -->
