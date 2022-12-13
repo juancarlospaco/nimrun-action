@@ -60,7 +60,16 @@ function parseGithubCommand(comment) {
 function executeShebangScript(cmd, codes) {
   fs.writeFileSync(temporaryFile, codes)
   console.log("COMMAND:\t", cmd)
-  return execSync(cmd).toString().trim()
+  try {
+    let result = execSync(cmd).toString().trim()
+    addReaction(githubClient, "+1")
+  } catch (error) {
+    addReaction(githubClient, "-1")
+    core.setFailed(error);
+    let result = ""
+  } finally {
+    return result
+  }
 }
 
 
@@ -80,10 +89,7 @@ if (context.eventName === "issue_comment") {
         const output = executeShebangScript(cmd, codes)
         console.log("OK_OUTPUT\t", output)
         if (output.length > 0) {
-          console.log("addReaction")
-          if (addReaction(githubClient, "+1")) {
-            console.warn("HERE");
-          }
+          console.warn("HERE");
         }
       }
     }
