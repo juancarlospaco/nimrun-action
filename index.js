@@ -34,62 +34,6 @@ async function addReaction(githubClient, reaction) {
 };
 
 
-
-// Add :eyes: reaction
-const reactionRes = await githubClient.reactions.createForIssueComment({
-  comment_id: (context.payload as any).comment.id,
-  content   : 'eyes',
-  owner     : context.repo.owner,
-  repo      : context.repo.repo
-})
-.catch(err => {
-  // eslint-disable-next-line no-console
-  console.warn('Add-eyes-reaction failed: ', err)
-})
-
-// const walk = (startPath, callback) => {
-//   console.assert(startPath.length > 0);
-//   var counter = 0;
-//   if (!fs.existsSync(startPath)) {
-//     return;
-//   }
-//   var files = fs.readdirSync(startPath);
-//   for (var i = 0; i < files.length; i++) {
-//     var filename = path.join(startPath, files[i]);
-//     var stat = fs.lstatSync(filename);
-//     if (stat.isDirectory()) {
-//         walk(filename, callback);
-//     } else {
-//       if (filename.length > 0 && filename[0] != "." && filename.substr(filename.length - 4, filename.length) == ".nim") {
-//         console.log(counter + "\t" + filename);
-//         counter++;
-//         callback(filename);
-//       }
-//     }
-//   };
-// };
-
-
-// const walks = (currentValue, index) => {
-//   console.assert(currentValue.length > 0);
-//   console.log("\nfolder\t'" + currentValue + "'");
-//   const verbose = cfg('verbose') === "true";
-//   walk(currentValue, function (filename) {
-//     const cmd = `nimlint --verbose:${ verbose } --output:${ filename } --input:${ filename }`;
-//     if (verbose) {
-//       console.log(cmd);
-//     };
-//     exec(cmd, (err, stdout, stderr) => {
-//       if (err) {
-//         core.setFailed(`${stderr} ${stdout} ${err}`);
-//         return;
-//       };
-//     });
-//   });
-// };
-
-
-
 if (context.eventName === "issue_comment") {
   const commentPrefix = "@github-actions run"
   const githubToken = cfg('github-token')
@@ -105,22 +49,3 @@ if (context.eventName === "issue_comment") {
     }
   }
 }
-
-
-
-
-// try {
-
-//   const nimlintInstall = "nimble -y --noColor install https://github.com/nim-compiler-dev/nimlint.git";
-//   exec(nimlintInstall, (err, stdout, stderr) => {
-//     if (err) {
-//       core.setFailed(`${stderr} ${stdout} ${err}`);
-//       return;
-//     } else {
-//       cfg('folders').split(',').forEach(walks);
-//     };
-//   });
-// } catch (error) {
-//   core.setFailed(`${stderr} ${stdout} ${err}`);
-// }
-// }
