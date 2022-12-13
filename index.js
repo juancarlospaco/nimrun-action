@@ -105,6 +105,9 @@ if (context.eventName === "issue_comment") {
   const commentPrefix = "@github-actions nim r"
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
+  console.log("CONTEXT")
+  console.log(context)
+  console.log("CONTEXT")
   // Check if we have permissions.
   if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', 'read'])) {
     const githubComment = context.payload.comment.body.trim()
