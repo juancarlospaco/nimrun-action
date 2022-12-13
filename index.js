@@ -98,6 +98,7 @@ if (context.eventName === "issue_comment") {
       if (addReaction(githubClient, "eyes")) {
         const output = executeShebangScript(cmd, codes)
         if (output.length > 0) {
+          console.log("OK_OUTPUT\t", output)
           if (addReaction(githubClient, "+1")) {
             console.warn("HERE");
           }
