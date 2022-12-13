@@ -59,10 +59,10 @@ function parseGithubCommand(comment) {
 
 async function executeShebangScript(cmd, codes) {
   try {
-    fs.writeFileSync(temporaryFile, codes)
+    // fs.writeFileSync(temporaryFile, codes)
     // await exec(cmd, [], {outStream: process.stdout, errStream: process.stderr})
     console.log("COMMAND:\t", cmd)
-    console.log("CODE:\t", fs.readFileSync(temporaryFile).toString() )
+    console.log("CODE:\t", `${cmd} --eval:"${codes}"` )
     exec(`${cmd} --eval:"${codes}"`, (err, stdout, stderr) => {
       if (err) {
         // core.setFailed(`${stderr} ${stdout} ${err}`);
