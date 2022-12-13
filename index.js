@@ -68,11 +68,16 @@ async function checkCollaboratorPermissionLevel(githubClient, levels) {
 
 
 if (context.eventName === "issue_comment") {
+  const commentPrefix = "@github-actions run"
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
 
-  if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write'])) {
-    console.warn("HERE");
+  if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', 'read'])) {
+    const githubComment = context.payload.comment.body.trim()
+    if (githubComment.startsWith(commentPrefix)) {
+      console.warn("HERE");
+    }
+
   }
 
 }
