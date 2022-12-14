@@ -1,7 +1,7 @@
 {
   "name": "nimrun-action",
   "version": "0.0.1",
-  "description": "Nim run GitHub Action",
+  "description": "Compile and run Nim source code from GitHub issue comments code blocks",
   "main": "index.js",
   "repository": {
     "type": "git",
