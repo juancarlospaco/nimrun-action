@@ -21,6 +21,11 @@ const cfg = (key) => {
 };
 
 
+const indentString = (str, count, indent = ' ') => {
+  str.replace(/^/gm, indent.repeat(count))
+}
+
+
 function formatDuration(seconds) {
   function numberEnding(number) {
     return (number > 1) ? 's' : '';
@@ -147,7 +152,7 @@ function executeGenDepend() {
 
 function executeAstGen(codes) {
   const cmd2 = "nim check --hints:off --verbosity:0 --import:std/macros "
-  fs.writeFileSync(temporaryFile2, "dumpAstGen:\n" + codes.indent(2))
+  fs.writeFileSync(temporaryFile2, "dumpAstGen:\n" + indentString(codes, 2))
   try {
     return execSync(cmd2 + temporaryFile2).toString().trim()
   } catch (error) {
