@@ -2,10 +2,10 @@
 
 - [GitHub Action](https://github.com/features/actions) to compile and run Nim source code from GitHub issue comments code blocks.
 
-![](screenshot.png)
-
-
 https://user-images.githubusercontent.com/1189414/207674682-c971f842-b4ef-42a3-81b2-62e1c378d5a4.mp4
+
+
+![](https://raw.githubusercontent.com/juancarlospaco/nimrun-action/nim/screenshot.png)
 
 
 # Use
