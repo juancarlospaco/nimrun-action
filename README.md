@@ -5,6 +5,11 @@
 ![](screenshot.png)
 
 
+- `@github-actions` adds :eyes: Reaction to your Github issue comment when seen.
+- `@github-actions` adds :+1: Reaction to your Github issue comment when your Nim source code compiles and runs OK.
+- `@github-actions` adds :-1: Reaction to your Github issue comment when your Nim source code fails to compile and run.
+- `@github-actions` adds 1 new Github issue comment with the results and stats about your Nim source code.
+
 
 # Use
 
