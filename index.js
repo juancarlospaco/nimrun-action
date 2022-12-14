@@ -3,16 +3,16 @@ const fs       = require('fs');
 const os       = require('os');
 const path     = require('path');
 const core     = require('@actions/core');
+const marked   = require('marked')
 const { execSync } = require('child_process');
 const {context, GitHub} = require('@actions/github')
-const marked = require('marked')
 
 
-const temporaryFile = `${ process.cwd() }/temp.nim`
-const temporaryFile2 = `${ process.cwd() }/dumper.nim`
+const tripleBackticks  = "```"
+const temporaryFile    = `${ process.cwd() }/temp.nim`
+const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
-const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off "
-const tripleBackticks = "```"
+const extraFlags       = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off "
 
 
 const cfg = (key) => {
@@ -54,7 +54,7 @@ function formatSizeUnits(bytes) {
   if      (bytes >= 1073741824) { bytes = (bytes / 1073741824).toFixed(2) + " Gb"; }
   else if (bytes >= 1048576)    { bytes = (bytes / 1048576).toFixed(2) + " Mb"; }
   else if (bytes >= 1024)       { bytes = (bytes / 1024).toFixed(2) + " Kb"; }
-  else if (bytes > 1)           { bytes = bytes + " bytes"; }
+  else if (bytes >  1)          { bytes = bytes + " bytes"; }
   else if (bytes == 1)          { bytes = bytes + " byte"; }
   else                          { bytes = "0 bytes"; }
   return bytes;
@@ -126,7 +126,6 @@ function parseGithubComment(comment) {
 
 function parseGithubCommand(comment) {
   let result = comment.split("\n")[0].trim()
-  // result = result.replace("@github-actions", "")
   if (result.startsWith("@github-actions nim c") || result.startsWith("@github-actions nim cpp") || result.startsWith("@github-actions nim js") || result.startsWith("@github-actions nim e")) {
     if (result.startsWith("@github-actions nim js")) {
       result = result + " -d:nodejs "
@@ -234,13 +233,12 @@ ${ tripleBackticks }
   }
 }
 
+
 /*
 <details>
   <summary>Deps</summary>
-
 ${ tripleBackticks }
 ${ executeGenDepend() }
 ${ tripleBackticks }
-
 </details>
 */
