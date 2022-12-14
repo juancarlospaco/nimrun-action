@@ -122,6 +122,7 @@ if (context.eventName === "issue_comment") {
         const finished = new Date()  // performance.now()
         if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
           const comment = `
+          @${context.actor}
           <details open=true >
             <summary>Output</summary>
             <code>${output}</code>
