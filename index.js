@@ -110,7 +110,7 @@ function parseGithubComment(comment) {
 function parseGithubCommand(comment) {
   let result = comment.split("\n")[0].trim()
   // result = result.replace("@github-actions", "")
-  if (result.startsWith("@github-actions nim c") || result.startsWith("@github-actions nim cpp") || result.startsWith("@github-actions nim js")) {
+  if (result.startsWith("@github-actions nim c") || result.startsWith("@github-actions nim cpp") || result.startsWith("@github-actions nim js") || result.startsWith("@github-actions nim e")) {
     if (result.startsWith("@github-actions nim js")) {
       result = result + " -d:nodejs "
     }
@@ -168,7 +168,7 @@ if (context.eventName === "issue_comment") {
   const githubToken   = cfg('github-token')
   const githubClient  = new GitHub(githubToken)
   // Check if we have permissions.
-  if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', 'read'])) {
+  if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write'])) {
     const githubComment = context.payload.comment.body.trim()
     // Check if github comment starts with commentPrefix.
     if (githubComment.startsWith(commentPrefix)) {
@@ -204,7 +204,7 @@ ${ tripleBackticks }
 <details>
   <summary>AST</summary>
 
-${ tripleBackticks }
+${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }
 
