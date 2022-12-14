@@ -9,6 +9,7 @@ const marked = require('marked')
 const temporaryFile = `${ process.cwd() }/temp.nim`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --warning:UnusedImport:off "
+const tripleBackticks = "```"
 
 
 const cfg = (key) => {
@@ -166,7 +167,9 @@ if (context.eventName === "issue_comment") {
 </details>
 <details>
   <summary>Dependencies</summary>
-  <svg>${ executeGenDepend() }</svg>
+${ tripleBackticks }
+${ executeGenDepend() }
+${ tripleBackticks }
 </details>
 `)
         }
