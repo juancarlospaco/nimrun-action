@@ -41,11 +41,13 @@ The Bot will match Github issue comments that starts with:
 
 And followed by a code block of Nim source code:
 
-<code>
+```
+
 ```nim
 echo "Like this one"
 ```
-<code>
+
+```
 
 
 # Requisites
