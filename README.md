@@ -43,6 +43,11 @@ The Bot will match Github issue comments that starts with:
 And followed by a code block of Nim source code.
 
 
+# Examples
+
+- https://github.com/juancarlospaco/nimrun-action/issues/3#issuecomment-1351871284
+
+
 # Security
 
 - Only users with write permissions can run code (Admins and Collaborators with push permissions).
