@@ -41,8 +41,10 @@ function formatDuration(seconds) {
 
 
 function getFilesizeInBytes(filename) {
-  const stats = fs.statSync(filename)
-  return stats.size
+  if (fs.existsSync(filename)) {
+    return fs.statSync(filename).size
+  }
+  return 0
 }
 
 
