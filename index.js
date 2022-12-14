@@ -82,7 +82,8 @@ function parseGithubComment(comment) {
 function parseGithubCommand(comment) {
   let result = comment.split("\n")[0].trim()
   // result = result.replace("@github-actions", "")
-  result = result.replace("@github-actions nim", "nim r --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 ")
+  result = result.replace("@github-actions nim", "nim r --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off ")
+  result = result.replace(" r ", " ")
   result = result + " " + temporaryFile
   return result.trim()
 };
