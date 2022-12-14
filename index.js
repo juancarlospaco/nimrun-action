@@ -81,9 +81,8 @@ function parseGithubComment(comment) {
 
 function parseGithubCommand(comment) {
   let result = comment.split("\n")[0].trim()
-  result = result.replace("@github-actions", "")
-  result = result.replace("nim r", "nim r --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --listCmd")
-  result = result.replace(" -r ", " ")
+  // result = result.replace("@github-actions", "")
+  result = result.replace("@github-actions nim", "nim r --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 ")
   result = result + " " + temporaryFile
   return result.trim()
 };
@@ -102,7 +101,7 @@ function executeShebangScript(cmd, codes) {
 
 
 if (context.eventName === "issue_comment") {
-  const commentPrefix = "@github-actions nim r"
+  const commentPrefix = "@github-actions nim"
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
   console.log("CONTEXT")
@@ -120,9 +119,11 @@ if (context.eventName === "issue_comment") {
         const started  = new Date()  // performance.now()
         const output   = executeShebangScript(cmd, codes)
         const finished = new Date()  // performance.now()
+        // Add Reaction of "+1" if success or "-1" if fails.
         if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
+          // Report results back as a comment on the issue.
           addIssueComment(githubClient, `
-@${context.actor} (${context.payload.comment.author_association})
+@${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })
 <details open=true >
   <summary>Output</summary>
   <code>${output}</code>
