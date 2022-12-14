@@ -121,20 +121,20 @@ if (context.eventName === "issue_comment") {
         const output   = executeShebangScript(cmd, codes)
         const finished = new Date()  // performance.now()
         if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
-          const comment = `
-          @${context.actor}
-          <details open=true >
-            <summary>Output</summary>
-            <code>${output}</code>
-          </details>
-          <details>
-            <summary>Bench</summary>
-            <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
-            <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
-            <b>duration</b>  <code>${ finished - started }</code> milliseconds (${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) })<br>
-          </details>
-          `
-          addIssueComment(githubClient, comment)
+          addIssueComment(githubClient, `
+@${context.actor}
+<details open=true >
+  <summary>Output</summary>
+  <code>${output}</code>
+</details>
+<details>
+  <summary>Bench</summary>
+  <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
+  <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
+  <b>duration</b>  <code>${ finished - started }</code> milliseconds (${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) })<br>
+  <b>command </b>  <code>${ cmd }</code><br>
+</details>
+          `)
         }
       }
     }
