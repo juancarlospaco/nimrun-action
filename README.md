@@ -39,15 +39,12 @@ The Bot will match Github issue comments that starts with:
 - `"@github-actions nim js"`
 - `"@github-actions nim e"`
 
-And followed by a code block of Nim source code:
+And followed by a code block of Nim source code.
 
-```
 
-```nim
-echo "Like this one"
-```
+# Security
 
-```
+- Only users with write permissions can run code.
 
 
 # Requisites
