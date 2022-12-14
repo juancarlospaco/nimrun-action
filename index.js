@@ -7,6 +7,7 @@ const { execSync } = require('child_process');
 const {context, GitHub} = require('@actions/github')
 const marked = require('marked')
 const temporaryFile = `${ process.cwd() }/temp.nim`
+const temporaryFile2 = `${ process.cwd() }/dumper.nim`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --warning:UnusedImport:off --lineTrace:off "
 const tripleBackticks = "```"
@@ -144,6 +145,18 @@ function executeGenDepend() {
 }
 
 
+function executeAstGen(codes) {
+  const cmd2 = "nim check --hints:off --verbosity:0 --import:std/macros "
+  fs.writeFileSync(temporaryFile2, "dumpAstGen:\n" + codes.indent(2))
+  try {
+    return execSync(cmd2 + temporaryFile2).toString().trim()
+  } catch (error) {
+    core.setFailed(error)
+    return ""
+  }
+}
+
+
 // Only run if this is an "issue_comment".
 if (context.eventName === "issue_comment") {
   const commentPrefix = "@github-actions nim"
@@ -164,7 +177,6 @@ if (context.eventName === "issue_comment") {
         // Add Reaction of "+1" if success or "-1" if fails.
         if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
           // Report results back as a comment on the issue.
-          const zise = getFilesizeInBytes(temporaryOutFile)
           addIssueComment(githubClient, `
 @${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })
 <details open=true >
@@ -176,19 +188,27 @@ ${ tripleBackticks }
 
 </details>
 <details>
-  <summary>Bench</summary>
+  <summary>Stats</summary>
   <b>created </b>  <code>${ context.payload.comment.created_at }</code><br>
   <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
   <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
-  <b>duration</b>  <code>${ finished - started }</code> milliseconds (${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) })<br>
+  <b>duration</b>  <code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
   <b>filesize</b>  <code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
   <b>command </b>  <code>${ cmd.replace(`--out:${temporaryOutFile} ${temporaryFile}`, "") }</code><br>
 </details>
 <details>
-  <summary>Dependencies</summary>
+  <summary>Deps</summary>
 
 ${ tripleBackticks }
 ${ executeGenDepend() }
+${ tripleBackticks }
+
+</details>
+<details>
+  <summary>AST</summary>
+
+${ tripleBackticks }
+${ executeAstGen(codes) }
 ${ tripleBackticks }
 
 </details>
