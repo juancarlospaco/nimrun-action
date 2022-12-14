@@ -7,10 +7,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: jiro4989/setup-nim-action@v1
       with:
         nim-version: 'devel'
+    - name: Install dot for Dependencies graph
+      run: sudo apt-get install -y graphviz
     - uses: ./
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
