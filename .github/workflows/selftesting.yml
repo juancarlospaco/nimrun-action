@@ -11,8 +11,8 @@ jobs:
     - uses: jiro4989/setup-nim-action@v1
       with:
         nim-version: 'devel'
-    - name: Install dot for Dependencies graph
-      run: sudo apt-get install -q -y graphviz libgraph-easy-perl
+    # - name: Install dot for Dependencies graph
+    #   run: sudo apt-get install -q -y graphviz libgraph-easy-perl
     - uses: ./
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
