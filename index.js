@@ -9,7 +9,7 @@ const marked = require('marked')
 const temporaryFile = `${ process.cwd() }/temp.nim`
 const temporaryFile2 = `${ process.cwd() }/dumper.nim`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
-const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --warning:UnusedImport:off --lineTrace:off "
+const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warning:UnusedImport:off --lineTrace:off "
 const tripleBackticks = "```"
 
 
@@ -140,7 +140,7 @@ function executeGenDepend() {
   // Generate a dependency graph in ASCII Art, because Github markdown dont support SVG.
   // If this fails because missing graph-easy, then it returns empty string.
   try {
-    execSync(`nim genDepend ${ temporaryFile }`)
+    execSync(`nim genDepend --verbosity:0 --hints:off ${ temporaryFile }`)
     return execSync(`graph-easy ${ temporaryFile.replace(".nim", ".dot") }`).toString()
   } catch (error) {
     console.warn(error)
@@ -154,7 +154,8 @@ function executeAstGen(codes) {
   const cmd2 = "nim check --hints:off --verbosity:0 --import:std/macros "
   fs.writeFileSync(temporaryFile2, "dumpAstGen:\n" + indentString(codes, 2))
   try {
-    return execSync(cmd2 + temporaryFile2).toString().trim()
+    // return execSync(cmd2 + temporaryFile2).toString().trim()
+    return fs.readFileSync(temporaryFile2).toString()
   } catch (error) {
     core.setFailed(error)
     return ""
