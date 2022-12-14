@@ -44,7 +44,7 @@ And followed by a code block of Nim source code.
 
 # Security
 
-- Only users with write permissions can run code (Admins and Collaborators with Push permissions).
+- Only users with write permissions can run code (Admins and Collaborators with push permissions).
 
 
 # Requisites
@@ -56,4 +56,4 @@ And followed by a code block of Nim source code.
 
 - Why not take care of setting up Nim by itself?.
 
-Because some people already do it with just Git or Gitnim or Choosenim or setup-nim-action.
+Because some people already do it with just Git or Choosenim or setup-nim-action.
