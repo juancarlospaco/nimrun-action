@@ -93,7 +93,7 @@ function parseGithubCommand(comment) {
   // result = result.replace("@github-actions", "")
   if (result.startsWith("@github-actions nim c") || result.startsWith("@github-actions nim cpp") || result.startsWith("@github-actions nim js")) {
     result = result.replace("@github-actions", "")
-    result = result + " --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 "
+    result = result + " --run --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --warning:UnusedImport:off "
     result = result + ` --out:${temporaryOutFile} ${temporaryFile}`
     return result.trim()
   } else {
@@ -146,7 +146,7 @@ if (context.eventName === "issue_comment") {
   <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
   <b>duration</b>  <code>${ finished - started }</code> milliseconds (${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) })<br>
   <b>filesize</b>  <code>${ getFilesizeInBytes(temporaryOutFile) }</code> bytes<br>
-  <b>command </b>  <code>${ cmd.replace(temporaryFile, "") }</code><br>
+  <b>command </b>  <code>${ cmd.replace(` --out:${temporaryOutFile} ${temporaryFile}`, "") }</code><br>
 </details>
           `)
         }
