@@ -41,6 +41,7 @@ The Bot will match Github issue comments that starts with:
 - `"@github-actions nim e"`
 
 And followed by a code block of Nim source code.
+[std/prelude is automatically imported.](https://nim-lang.github.io/Nim/prelude.html)
 
 
 # Examples
