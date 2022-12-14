@@ -42,6 +42,17 @@ function formatDuration(seconds) {
 }
 
 
+function formatSizeUnits(bytes) {
+  if      (bytes >= 1073741824) { bytes = (bytes / 1073741824).toFixed(2) + " Gb"; }
+  else if (bytes >= 1048576)    { bytes = (bytes / 1048576).toFixed(2) + " Mb"; }
+  else if (bytes >= 1024)       { bytes = (bytes / 1024).toFixed(2) + " Kb"; }
+  else if (bytes > 1)           { bytes = bytes + " bytes"; }
+  else if (bytes == 1)          { bytes = bytes + " byte"; }
+  else                          { bytes = "0 bytes"; }
+  return bytes;
+}
+
+
 function getFilesizeInBytes(filename) {
   if (fs.existsSync(filename)) {
     return fs.statSync(filename).size
@@ -153,6 +164,7 @@ if (context.eventName === "issue_comment") {
         // Add Reaction of "+1" if success or "-1" if fails.
         if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
           // Report results back as a comment on the issue.
+          const zise = getFilesizeInBytes(temporaryOutFile)
           addIssueComment(githubClient, `
 @${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })
 <details open=true >
@@ -169,7 +181,7 @@ ${ tripleBackticks }
   <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
   <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
   <b>duration</b>  <code>${ finished - started }</code> milliseconds (${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) })<br>
-  <b>filesize</b>  <code>${ getFilesizeInBytes(temporaryOutFile) }</code> bytes<br>
+  <b>filesize</b>  <code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
   <b>command </b>  <code>${ cmd.replace(`--out:${temporaryOutFile} ${temporaryFile}`, "") }</code><br>
 </details>
 <details>
