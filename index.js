@@ -22,7 +22,7 @@ const cfg = (key) => {
 
 
 const indentString = (str, count, indent = ' ') => {
-  str.replace(/^/gm, indent.repeat(count))
+  return str.replace(/^/gm, indent.repeat(count))
 }
 
 
