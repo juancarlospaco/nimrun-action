@@ -71,7 +71,8 @@ function getFilesizeInBytes(filename) {
 
 async function checkCollaboratorPermissionLevel(githubClient, levels) {
   // Special case this one to save one request to the API.
-  if ( !["owner", "collaborator"].includes(context.payload.comment.author_association.toLowerCase().trim()) ) {
+  const authorPerm = context.payload.comment.author_association.toLowerCase().trim()
+  if ( authorPerm !== "owner" && authorPerm !== "collaborator" ) {
     return false
   }
   const permissionRes = await githubClient.repos.getCollaboratorPermissionLevel({
