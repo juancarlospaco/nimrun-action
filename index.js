@@ -75,7 +75,7 @@ async function checkCollaboratorPermissionLevel(githubClient, levels) {
     repo    : context.repo.repo,
     username: context.actor,
   })
-  return (permissionRes.status === 200 && levels.includes(permissionRes.data.permission))
+  return (permissionRes.status === 200 && levels.includes(permissionRes.data.permission) && context.payload.comment.author_association.toLowerCase() !== "none")
 };
 
 
