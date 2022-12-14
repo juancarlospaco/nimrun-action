@@ -7,6 +7,7 @@ const { execSync } = require('child_process');
 const {context, GitHub} = require('@actions/github')
 const marked = require('marked')
 const temporaryFile = `${ process.cwd() }/temp.nim`
+const temporaryOutFile = temporaryFile.replace(".nim", "")
 
 
 const cfg = (key) => {
@@ -36,6 +37,12 @@ function formatDuration(seconds) {
   } else {
     return "now"
   }
+}
+
+
+function getFilesizeInBytes(filename) {
+  const stats = fs.statSync(filename)
+  return stats.size
 }
 
 
@@ -82,10 +89,14 @@ function parseGithubComment(comment) {
 function parseGithubCommand(comment) {
   let result = comment.split("\n")[0].trim()
   // result = result.replace("@github-actions", "")
-  result = result.replace("@github-actions nim", "nim r --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off ")
-  result = result.replace(" r ", " ")
-  result = result + " " + temporaryFile
-  return result.trim()
+  if (result.startsWith("@github-actions nim c ") || result.startsWith("@github-actions nim cpp ") || result.startsWith("@github-actions nim js ")) {
+    result = result.replace("@github-actions", "")
+    result = result + " --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 "
+    result = result + ` --out:${temporaryOutFile} ${temporaryFile}`
+    return result.trim()
+  } else {
+    core.setFailed("Github comment must start with '@github-actions nim c' or '@github-actions nim cpp' or '@github-actions nim js'")
+  }
 };
 
 
@@ -105,9 +116,6 @@ if (context.eventName === "issue_comment") {
   const commentPrefix = "@github-actions nim"
   const githubToken = cfg('github-token')
   const githubClient = new GitHub(githubToken)
-  console.log("CONTEXT")
-  console.log(context)
-  console.log("CONTEXT")
   // Check if we have permissions.
   if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', 'read'])) {
     const githubComment = context.payload.comment.body.trim()
@@ -135,6 +143,7 @@ if (context.eventName === "issue_comment") {
   <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
   <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
   <b>duration</b>  <code>${ finished - started }</code> milliseconds (${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) })<br>
+  <b>filesize</b>  <code>${ getFilesizeInBytes(temporaryOutFile) }</code> bytes<br>
   <b>command </b>  <code>${ cmd.replace(temporaryFile, "") }</code><br>
 </details>
           `)
