@@ -5,10 +5,6 @@
 ![](screenshot.png)
 
 
-- `@github-actions` adds :eyes: Reaction to your Github issue comment when seen.
-- `@github-actions` adds :+1: Reaction to your Github issue comment when your Nim source code compiles and runs OK.
-- `@github-actions` adds :-1: Reaction to your Github issue comment when your Nim source code fails to compile and run.
-- `@github-actions` adds 1 new Github issue comment with the results and stats about your Nim source code.
 
 
 # Use
@@ -29,6 +25,27 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+- Nim version to use depends on `nim-version` of `jiro4989/setup-nim-action`.
+- `@github-actions` adds :eyes: Reaction to your Github issue comment when seen.
+- `@github-actions` adds :+1: Reaction to your Github issue comment when your code compiles and runs OK.
+- `@github-actions` adds :-1: Reaction to your Github issue comment when your code fails to run.
+- `@github-actions` adds 1 new Github issue comment with the results and stats about your code.
+
+The Bot will match Github issue comments that starts with:
+
+- `"@github-actions nim c"`
+- `"@github-actions nim cpp"`
+- `"@github-actions nim js"`
+- `"@github-actions nim e"`
+
+And followed by a code block of Nim source code:
+
+<code>
+```nim
+echo "Like this one"
+```
+<code>
 
 
 # Requisites
