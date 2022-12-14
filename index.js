@@ -122,7 +122,7 @@ function executeGenDepend() {
   try {
     execSync(`nim genDepend ${ temporaryFile }`)
     execSync(`dot -Tsvg ${ temporaryFile.replace(".nim", ".dot") } -o ${ temporaryFile.replace(".nim", ".svg") }`)
-    return fs.readFileSync(temporaryFile.replace(".nim", ".svg")).trim()
+    return fs.readFileSync(temporaryFile.replace(".nim", ".svg")).toString().trim()
   } catch (error) {
     console.warn(error)
     return ""
