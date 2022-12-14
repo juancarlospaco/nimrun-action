@@ -8,6 +8,7 @@ const {context, GitHub} = require('@actions/github')
 const marked = require('marked')
 const temporaryFile = `${ process.cwd() }/temp.nim`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
+const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --warning:UnusedImport:off "
 
 
 const cfg = (key) => {
@@ -20,7 +21,7 @@ const cfg = (key) => {
 
 function formatDuration(seconds) {
   function numberEnding(number) {
-      return (number > 1) ? 's' : '';
+    return (number > 1) ? 's' : '';
   }
   if (seconds > 0) {
       const years   = Math.floor(seconds   / 31536000);
@@ -92,8 +93,11 @@ function parseGithubCommand(comment) {
   let result = comment.split("\n")[0].trim()
   // result = result.replace("@github-actions", "")
   if (result.startsWith("@github-actions nim c") || result.startsWith("@github-actions nim cpp") || result.startsWith("@github-actions nim js")) {
+    if (result.startsWith("@github-actions nim js")) {
+      result = result + " -d:nodejs "
+    }
     result = result.replace("@github-actions", "")
-    result = result + " --run --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --warning:UnusedImport:off "
+    result = result + extraFlags
     result = result + ` --out:${temporaryOutFile} ${temporaryFile}`
     return result.trim()
   } else {
@@ -102,7 +106,7 @@ function parseGithubCommand(comment) {
 };
 
 
-function executeShebangScript(cmd, codes) {
+function executeNim(cmd, codes) {
   fs.writeFileSync(temporaryFile, codes)
   console.log("COMMAND:\t", cmd)
   try {
@@ -114,21 +118,34 @@ function executeShebangScript(cmd, codes) {
 }
 
 
+function executeGenDepend() {
+  try {
+    execSync(`nim genDepend ${ temporaryFile }`)
+    execSync(`dot -Tsvg ${ temporaryFile.replace(".nim", ".dot") } -o ${ temporaryFile.replace(".nim", ".svg") }`)
+    return fs.readFileSync(temporaryFile.replace(".nim", ".svg")).trim()
+  } catch (error) {
+    console.warn(error)
+    return ""
+  }
+}
+
+
+// Only run if this is an "issue_comment".
 if (context.eventName === "issue_comment") {
   const commentPrefix = "@github-actions nim"
-  const githubToken = cfg('github-token')
-  const githubClient = new GitHub(githubToken)
+  const githubToken   = cfg('github-token')
+  const githubClient  = new GitHub(githubToken)
   // Check if we have permissions.
   if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write', 'read'])) {
     const githubComment = context.payload.comment.body.trim()
     // Check if github comment starts with commentPrefix.
     if (githubComment.startsWith(commentPrefix)) {
       const codes = parseGithubComment(githubComment)
-      const cmd = parseGithubCommand(githubComment)
+      const cmd   = parseGithubCommand(githubComment)
       // Add Reaction of "Eyes" as seen.
       if (addReaction(githubClient, "eyes")) {
         const started  = new Date()  // performance.now()
-        const output   = executeShebangScript(cmd, codes)
+        const output   = executeNim(cmd, codes)
         const finished = new Date()  // performance.now()
         // Add Reaction of "+1" if success or "-1" if fails.
         if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
@@ -147,7 +164,12 @@ if (context.eventName === "issue_comment") {
   <b>duration</b>  <code>${ finished - started }</code> milliseconds (${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) })<br>
   <b>filesize</b>  <code>${ getFilesizeInBytes(temporaryOutFile) }</code> bytes<br>
   <b>command </b>  <code>${ cmd.replace(`--out:${temporaryOutFile} ${temporaryFile}`, "") }</code><br>
-</details>`)
+</details>
+<details>
+  <summary>Dependencies</summary>
+  <svg>${ executeGenDepend() }</svg>
+</details>
+`)
         }
       }
     }
