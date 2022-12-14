@@ -1,12 +1,9 @@
 name: 'nimrun-action'
-description: 'Nim run GitHub Action'
+description: 'Compile and run Nim source code from GitHub issue comments code blocks'
 inputs:
   github-token:
     description: 'GitHub token'
     required:    true
-  allowed-associations:
-    description: Comment author associations allowed to execute scripts (e.g. '["OWNER", "COLLABORATOR"]')
-    default:     '["OWNER", "COLLABORATOR"]'
 runs:
   using: 'node16'
   main:  'index.js'

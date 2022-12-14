@@ -1,13 +1,13 @@
 name: "selftesting"
 on:
   issue_comment:
-    types: [created, edited]
+    types: created
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    # - uses: actions/checkout@v2
     - uses: jiro4989/setup-nim-action@v1
       with:
         nim-version: 'devel'
