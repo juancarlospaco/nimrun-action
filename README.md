@@ -44,7 +44,7 @@ And followed by a code block of Nim source code.
 
 # Security
 
-- Only users with write permissions can run code.
+- Only users with write permissions can run code (Admins and Collaborators with Push permissions).
 
 
 # Requisites
