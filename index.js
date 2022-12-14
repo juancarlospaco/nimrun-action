@@ -8,7 +8,7 @@ const {context, GitHub} = require('@actions/github')
 const marked = require('marked')
 const temporaryFile = `${ process.cwd() }/temp.nim`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
-const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --warning:UnusedImport:off "
+const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --warning:UnusedImport:off --lineTrace:off "
 const tripleBackticks = "```"
 
 
@@ -120,11 +120,14 @@ function executeNim(cmd, codes) {
 
 
 function executeGenDepend() {
+  // Generate a dependency graph in ASCII Art, because Github markdown dont support SVG.
+  // If this fails because missing graph-easy, then it returns empty string.
   try {
     execSync(`nim genDepend ${ temporaryFile }`)
-    return execSync(`graph-easy ${ temporaryFile.replace(".nim", ".dot") }`).toString().trim()
+    return execSync(`graph-easy ${ temporaryFile.replace(".nim", ".dot") }`).toString()
   } catch (error) {
     console.warn(error)
+    console.warn("sudo apt-get install -q -y graphviz libgraph-easy-perl")
     return ""
   }
 }
@@ -154,7 +157,11 @@ if (context.eventName === "issue_comment") {
 @${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })
 <details open=true >
   <summary>Output</summary>
-  <code>${output}</code>
+
+${ tripleBackticks }
+${output}
+${ tripleBackticks }
+
 </details>
 <details>
   <summary>Bench</summary>
