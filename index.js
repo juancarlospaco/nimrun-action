@@ -208,14 +208,6 @@ ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }
 
-</details>
-<details>
-  <summary>Deps</summary>
-
-${ tripleBackticks }
-${ executeGenDepend() }
-${ tripleBackticks }
-
 </details>`)
         }
       }
