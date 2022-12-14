@@ -12,7 +12,7 @@ jobs:
       with:
         nim-version: 'devel'
     - name: Install dot for Dependencies graph
-      run: sudo apt-get install -y graphviz libgraph-easy-perl
+      run: sudo apt-get install -q -y graphviz libgraph-easy-perl
     - uses: ./
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}

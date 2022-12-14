@@ -167,9 +167,11 @@ if (context.eventName === "issue_comment") {
 </details>
 <details>
   <summary>Dependencies</summary>
+
 ${ tripleBackticks }
 ${ executeGenDepend() }
 ${ tripleBackticks }
+
 </details>
 `)
         }
