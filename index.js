@@ -9,7 +9,7 @@ const marked = require('marked')
 const temporaryFile = `${ process.cwd() }/temp.nim`
 const temporaryFile2 = `${ process.cwd() }/dumper.nim`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
-const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warning:UnusedImport:off --lineTrace:off "
+const extraFlags = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off "
 const tripleBackticks = "```"
 
 
@@ -140,7 +140,7 @@ function executeGenDepend() {
   // Generate a dependency graph in ASCII Art, because Github markdown dont support SVG.
   // If this fails because missing graph-easy, then it returns empty string.
   try {
-    execSync(`nim genDepend --verbosity:0 --hints:off ${ temporaryFile }`)
+    execSync(`nim genDepend --verbosity:0 --hints:off --warnings:off ${ temporaryFile }`)
     return execSync(`graph-easy ${ temporaryFile.replace(".nim", ".dot") }`).toString()
   } catch (error) {
     console.warn(error)
@@ -151,11 +151,10 @@ function executeGenDepend() {
 
 
 function executeAstGen(codes) {
-  const cmd2 = "nim check --hints:off --verbosity:0 --import:std/macros "
+  const cmd2 = "nim check --verbosity:0 --hints:off --warnings:off --import:std/macros "
   fs.writeFileSync(temporaryFile2, "dumpAstGen:\n" + indentString(codes, 2))
   try {
-    // return execSync(cmd2 + temporaryFile2).toString().trim()
-    return fs.readFileSync(temporaryFile2).toString()
+    return execSync(cmd2 + temporaryFile2).toString().trim()
   } catch (error) {
     core.setFailed(error)
     return ""
@@ -203,18 +202,18 @@ ${ tripleBackticks }
   <b>command </b>  <code>${ cmd.replace(`--out:${temporaryOutFile} ${temporaryFile}`, "") }</code><br>
 </details>
 <details>
-  <summary>Deps</summary>
-
-${ tripleBackticks }
-${ executeGenDepend() }
-${ tripleBackticks }
-
-</details>
-<details>
   <summary>AST</summary>
 
 ${ tripleBackticks }
 ${ executeAstGen(codes) }
+${ tripleBackticks }
+
+</details>
+<details>
+  <summary>Deps</summary>
+
+${ tripleBackticks }
+${ executeGenDepend() }
 ${ tripleBackticks }
 
 </details>
