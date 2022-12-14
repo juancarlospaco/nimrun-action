@@ -69,12 +69,19 @@ function getFilesizeInBytes(filename) {
 }
 
 
-async function checkCollaboratorPermissionLevel(githubClient, levels) {
-  // Special case this one to save one request to the API.
+function checkAuthorAssociation() {
   const authorPerm = context.payload.comment.author_association.toLowerCase().trim()
-  if ( !["owner", "collaborator"].includes(authorPerm) ) {
-    return false
+  if ( authorPerm === "owner" ) {
+    return true
   }
+  if ( authorPerm === "collaborator" ) {
+    return true
+  }
+  return false
+};
+
+
+async function checkCollaboratorPermissionLevel(githubClient, levels) {
   const permissionRes = await githubClient.repos.getCollaboratorPermissionLevel({
     owner   : context.repo.owner,
     repo    : context.repo.repo,
@@ -174,25 +181,26 @@ function executeAstGen(codes) {
 
 // Only run if this is an "issue_comment".
 if (context.eventName === "issue_comment") {
-  const githubToken   = cfg('github-token')
-  const githubClient  = new GitHub(githubToken)
-  // Check if we have permissions.
-  if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write'])) {
-    const commentPrefix = "@github-actions nim"
-    const githubComment = context.payload.comment.body.trim()
-    // Check if github comment starts with commentPrefix.
-    if (githubComment.startsWith(commentPrefix)) {
-      const codes = parseGithubComment(githubComment)
-      const cmd   = parseGithubCommand(githubComment)
-      // Add Reaction of "Eyes" as seen.
-      if (addReaction(githubClient, "eyes")) {
-        const started  = new Date()  // performance.now()
-        const output   = executeNim(cmd, codes)
-        const finished = new Date()  // performance.now()
-        // Add Reaction of "+1" if success or "-1" if fails.
-        if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
-          // Report results back as a comment on the issue.
-          addIssueComment(githubClient, `
+  if (checkAuthorAssociation()) {
+    const githubToken   = cfg('github-token')
+    const githubClient  = new GitHub(githubToken)
+    // Check if we have permissions.
+    if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write'])) {
+      const commentPrefix = "@github-actions nim"
+      const githubComment = context.payload.comment.body.trim()
+      // Check if github comment starts with commentPrefix.
+      if (githubComment.startsWith(commentPrefix)) {
+        const codes = parseGithubComment(githubComment)
+        const cmd   = parseGithubCommand(githubComment)
+        // Add Reaction of "Eyes" as seen.
+        if (addReaction(githubClient, "eyes")) {
+          const started  = new Date()  // performance.now()
+          const output   = executeNim(cmd, codes)
+          const finished = new Date()  // performance.now()
+          // Add Reaction of "+1" if success or "-1" if fails.
+          if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
+            // Report results back as a comment on the issue.
+            addIssueComment(githubClient, `
 @${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })
 <details open=true >
   <summary>Output</summary>
@@ -219,12 +227,12 @@ ${ executeAstGen(codes) }
 ${ tripleBackticks }
 
 </details>`)
+          }
         }
       }
     }
   }
 }
-
 
 /*
 <details>
