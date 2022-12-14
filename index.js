@@ -170,7 +170,7 @@ if (context.eventName === "issue_comment") {
   const githubToken   = cfg('github-token')
   const githubClient  = new GitHub(githubToken)
   // Check if we have permissions.
-  if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write',])) {
+  if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write'])) {
     const githubComment = context.payload.comment.body.trim()
     // Check if github comment starts with commentPrefix.
     if (githubComment.startsWith(commentPrefix)) {
