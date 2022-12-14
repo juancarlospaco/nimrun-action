@@ -91,7 +91,7 @@ function parseGithubComment(comment) {
 function parseGithubCommand(comment) {
   let result = comment.split("\n")[0].trim()
   // result = result.replace("@github-actions", "")
-  if (result.startsWith("@github-actions nim c ") || result.startsWith("@github-actions nim cpp ") || result.startsWith("@github-actions nim js ")) {
+  if (result.startsWith("@github-actions nim c") || result.startsWith("@github-actions nim cpp") || result.startsWith("@github-actions nim js")) {
     result = result.replace("@github-actions", "")
     result = result + " --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 "
     result = result + ` --out:${temporaryOutFile} ${temporaryFile}`
