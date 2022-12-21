@@ -11,8 +11,10 @@ const {context, GitHub} = require('@actions/github')
 const tripleBackticks  = "```"
 const temporaryFile    = `${ process.cwd() }/temp.nim`
 const temporaryFile2   = `${ process.cwd() }/dumper.nim`
+const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
-const extraFlags       = " --run -d:strip --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off "
+const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
+const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off " + preparedFlags
 
 
 const cfg = (key) => {
@@ -130,9 +132,11 @@ function parseGithubCommand(comment) {
     if (result.startsWith("@github-actions nim js")) {
       result = result + " -d:nodejs "
     }
+    if (result.startsWith("@github-actions nim c") || result.startsWith("@github-actions nim cpp")) {
+      result = result + " --asm "
+    }
     result = result.replace("@github-actions", "")
     result = result + extraFlags
-    result = result + ` --out:${temporaryOutFile} ${temporaryFile}`
     return result.trim()
   } else {
     core.setFailed("Github comment must start with '@github-actions nim c' or '@github-actions nim cpp' or '@github-actions nim js'")
@@ -178,28 +182,38 @@ function executeAstGen(codes) {
 }
 
 
-// Only run if this is an "issue_comment".
-if (context.eventName === "issue_comment") {
-  if (checkAuthorAssociation()) {
-    const githubToken   = cfg('github-token')
-    const githubClient  = new GitHub(githubToken)
-    // Check if we have permissions.
-    if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write'])) {
-      const commentPrefix = "@github-actions nim"
-      const githubComment = context.payload.comment.body.trim()
-      // Check if github comment starts with commentPrefix.
-      if (githubComment.startsWith(commentPrefix)) {
-        const codes = parseGithubComment(githubComment)
-        const cmd   = parseGithubCommand(githubComment)
-        // Add Reaction of "Eyes" as seen.
-        if (addReaction(githubClient, "eyes")) {
-          const started  = new Date()  // performance.now()
-          const output   = executeNim(cmd, codes)
-          const finished = new Date()  // performance.now()
-          // Add Reaction of "+1" if success or "-1" if fails.
-          if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
-            // Report results back as a comment on the issue.
-            addIssueComment(githubClient, `
+function getAsm() {
+  if (fs.existsSync(temporaryFileAsm + ".asm")) {
+    return fs.readFileSync(temporaryFileAsm + ".asm").toString().trim()
+  }
+  if (fs.existsSync(temporaryFileAsm + "pp.asm")) {
+    return fs.readFileSync(temporaryFileAsm + "pp.asm").toString().trim()
+  }
+  return ""
+}
+
+
+// Only run if this is an "issue_comment" and checkAuthorAssociation.
+if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
+  const githubToken   = cfg('github-token')
+  const githubClient  = new GitHub(githubToken)
+  // Check if we have permissions.
+  if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write'])) {
+    const commentPrefix = "@github-actions nim"
+    const githubComment = context.payload.comment.body.trim()
+    // Check if github comment starts with commentPrefix.
+    if (githubComment.startsWith(commentPrefix)) {
+      const codes = parseGithubComment(githubComment)
+      const cmd   = parseGithubCommand(githubComment)
+      // Add Reaction of "Eyes" as seen.
+      if (addReaction(githubClient, "eyes")) {
+        const started  = new Date()  // performance.now()
+        const output   = executeNim(cmd, codes)
+        const finished = new Date()  // performance.now()
+        // Add Reaction of "+1" if success or "-1" if fails.
+        if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
+          // Report results back as a comment on the issue.
+          addIssueComment(githubClient, `
 @${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })
 <details open=true >
   <summary>Output</summary>
@@ -216,7 +230,7 @@ ${ tripleBackticks }
   <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
   <b>duration</b>  <code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
   <b>filesize</b>  <code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
-  <b>command </b>  <code>${ cmd.replace(`--out:${temporaryOutFile} ${temporaryFile}`, "") }</code><br>
+  <b>command </b>  <code>${ cmd.replace(preparedFlags, "") }</code><br>
 </details>
 <details>
   <summary>AST</summary>
@@ -225,8 +239,15 @@ ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }
 
+</details>
+<details>
+  <summary>ASM</summary>
+
+${ tripleBackticks }
+${ getAsm() }
+${ tripleBackticks }
+
 </details>`)
-          }
         }
       }
     }
