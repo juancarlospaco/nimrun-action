@@ -14,7 +14,7 @@ const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
-const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off " + preparedFlags
+const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
 
 
 const cfg = (key) => {
@@ -230,7 +230,7 @@ ${ tripleBackticks }
   <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
   <b>duration</b>  <code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
   <b>filesize</b>  <code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
-  <b>command </b>  <code>${ cmd.replace(preparedFlags, "") }</code><br>
+  <b>command </b>  <code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
 </details>
 <details>
   <summary>AST</summary>
@@ -243,7 +243,7 @@ ${ tripleBackticks }
 <details>
   <summary>ASM</summary>
 
-${ tripleBackticks }
+${ tripleBackticks }asm
 ${ getAsm() }
 ${ tripleBackticks }
 
