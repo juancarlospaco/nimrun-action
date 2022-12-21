@@ -133,7 +133,7 @@ function parseGithubCommand(comment) {
       result = result + " -d:nodejs "
     }
     if (result.startsWith("@github-actions nim c") || result.startsWith("@github-actions nim cpp")) {
-      result = result + " --asm "
+      result = result + " --asm --passC:-fno-verbose-asm "
     }
     result = result.replace("@github-actions", "")
     result = result + extraFlags
