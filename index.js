@@ -14,7 +14,7 @@ const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
-const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --include:prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
+const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
 const nimFinalVersions = ["devel", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
 
 
@@ -166,7 +166,10 @@ function executeChoosenim(semver) {
 
 
 function executeNim(cmd, codes) {
-  fs.writeFileSync(temporaryFile, codes)
+  if (!fs.existsSync(temporaryFile)) {
+    fs.writeFileSync(temporaryFile, codes)
+    fs.chmodSync(temporaryFile, "444")
+  }
   console.log("COMMAND:\t", cmd)
   try {
     return execSync(cmd).toString().trim()
@@ -203,15 +206,16 @@ function executeAstGen(codes) {
 }
 
 
-function getAsm() {
-  if (fs.existsSync(temporaryFileAsm + ".asm")) {
-    return fs.readFileSync(temporaryFileAsm + ".asm").toString().trim()
-  }
-  if (fs.existsSync(temporaryFileAsm + "pp.asm")) {
-    return fs.readFileSync(temporaryFileAsm + "pp.asm").toString().trim()
-  }
-  return ""
-}
+// Too verbose, can exceed maximum message len for comments and --asm wont work on old Nim versions.
+// function getAsm() {
+//   if (fs.existsSync(temporaryFileAsm + ".asm")) {
+//     return fs.readFileSync(temporaryFileAsm + ".asm").toString().trim()
+//   }
+//   if (fs.existsSync(temporaryFileAsm + "pp.asm")) {
+//     return fs.readFileSync(temporaryFileAsm + "pp.asm").toString().trim()
+//   }
+//   return ""
+// }
 
 
 // Only run if this is an "issue_comment" and checkAuthorAssociation.
@@ -263,14 +267,6 @@ ${ tripleBackticks }
 
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
-${ tripleBackticks }
-
-</details>
-<details>
-  <summary>ASM</summary>
-
-${ tripleBackticks }asm
-${ getAsm() }
 ${ tripleBackticks }
 
 </details>
