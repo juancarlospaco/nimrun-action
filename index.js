@@ -14,7 +14,7 @@ const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
-const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
+const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --include:prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
 const nimFinalVersions = ["devel", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
 
 
@@ -154,8 +154,7 @@ function parseGithubCommand(comment) {
 
 function executeChoosenim(semver) {
   console.assert(isSemverOrDevel(semver) , "SemVer must be 'devel' or 'stable' or 'X.Y.Z'");
-  // console.assert(fs.existsSync("choosenim"), "Choosenim not found");
-  const cmd = "choosenim --noColor --skipClean --yes update "
+  const cmd = "CHOOSENIM_NO_ANALYTICS=1 choosenim --noColor --skipClean --yes update "
   console.log("COMMAND:\t", `${cmd} ${semver}`)
   try {
     return execSync(`${cmd} ${semver}`).toString().trim()
