@@ -172,7 +172,13 @@ function executeNim(cmd, codes) {
   }
   console.log("COMMAND:\t", cmd)
   try {
-    return execSync(cmd).toString().trim()
+    let result = execSync(cmd, {encoding: 'utf8'}).trim()
+    // Get the PID
+    const pid = parseInt(execSync("echo $!"))
+    // Get the memory usage
+    const memUsage = execSync(`pmap -x ${pid} | grep total`)
+    console.log("memUsage\t", memUsage)
+    return result
   } catch (error) {
     core.setFailed(error)
     return ""
@@ -250,7 +256,6 @@ if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
 ${ tripleBackticks }
 ${output}
 ${ tripleBackticks }
-
 #### Stats
 - <b>created </b>\t<code>${ context.payload.comment.created_at }</code><br>
 - <b>started </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
@@ -264,7 +269,6 @@ ${ tripleBackticks }
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }
-
 </details>`
           }
         }
