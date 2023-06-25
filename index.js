@@ -174,7 +174,7 @@ function executeNim(cmd, codes) {
   try {
     let result = execSync(cmd, {encoding: 'utf8'}).trim()
     // Get the PID
-    const pid = parseInt(execSync("echo $!"))
+    const pid = parseInt(execSync("echo $!", {encoding: 'utf8'}))
     // Get the memory usage
     const memUsage = execSync(`pmap -x ${pid} | grep total`)
     console.log("memUsage\t", memUsage)
