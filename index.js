@@ -15,7 +15,7 @@ const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
 const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --forceBuild:on --colors:off --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
-const nimFinalVersions = ["devel", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
+const nimFinalVersions = ["devel", "stable", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
 
 
 const cfg = (key) => {
@@ -244,7 +244,7 @@ if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
           // Assume OK if output != ""
           if (output.length > 0) {
             const thumbsUpOrThumbsDown = (output.length > 0 ? ":+1:" : ":-1:")
-            issueCommentStr += `<details><summary>${semver} ${thumbsUpOrThumbsDown}</summary>
+            issueCommentStr += `<details><summary title="Repro using Nim ${semver}">${semver}\t${thumbsUpOrThumbsDown}</summary>
 #### Output
 
 ${ tripleBackticks }
@@ -252,12 +252,12 @@ ${output}
 ${ tripleBackticks }
 
 #### Stats
-  <b>created </b>\t<code>${ context.payload.comment.created_at }</code><br>
-  <b>started </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
-  <b>finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code><br>
-  <b>duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
-  <b>filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
-  <b>command </b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
+- <b>created </b>\t<code>${ context.payload.comment.created_at }</code><br>
+- <b>started </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
+- <b>finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code><br>
+- <b>duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
+- <b>filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
+- <b>command </b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
 
 #### AST
 
