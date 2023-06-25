@@ -243,7 +243,8 @@ if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
           const finished = new Date()  // performance.now()
           // Assume OK if output != ""
           if (output.length > 0) {
-            issueCommentStr += `<details><summary>${semver}</summary>
+            const thumbsUpOrThumbsDown = (output.length > 0 ? ":+1:" : ":-1:")
+            issueCommentStr += `<details><summary>${semver} ${thumbsUpOrThumbsDown}</summary>
 #### Output
 
 ${ tripleBackticks }
