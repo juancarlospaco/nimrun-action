@@ -15,6 +15,7 @@ const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
 const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --include:std/prelude --forceBuild:on --colors:off --panics:on --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
+const nimFinalVersions = ["devel", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
 
 
 const cfg = (key) => {
@@ -27,6 +28,13 @@ const cfg = (key) => {
 
 const indentString = (str, count, indent = ' ') => {
   return str.replace(/^/gm, indent.repeat(count))
+}
+
+
+function isSemverOrDevel(version) {
+  const semverPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+  const s = version.trim().toLowerCase();
+  return (semverPattern.test(s) || s === 'devel' || s === 'stable');
 }
 
 
@@ -144,6 +152,20 @@ function parseGithubCommand(comment) {
 };
 
 
+function executeChoosenim(semver) {
+  console.assert(isSemverOrDevel(semver) , "SemVer must be 'devel' or 'stable' or 'X.Y.Z'");
+  console.assert(fs.existsSync("choosenim"), "Choosenim not found");
+  const cmd = "choosenim --noColor --skipClean --yes update "
+  console.log("COMMAND:\t", cmd & semver)
+  try {
+    return execSync(cmd & semver).toString().trim()
+  } catch (error) {
+    core.setFailed(error)
+    return ""
+  }
+}
+
+
 function executeNim(cmd, codes) {
   fs.writeFileSync(temporaryFile, codes)
   console.log("COMMAND:\t", cmd)
@@ -197,6 +219,7 @@ function getAsm() {
 if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
   const githubToken   = cfg('github-token')
   const githubClient  = new GitHub(githubToken)
+  let issueCommentStr = `@${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })`
   // Check if we have permissions.
   if (checkCollaboratorPermissionLevel(githubClient, ['admin', 'write'])) {
     const commentPrefix = "@github-actions nim"
@@ -207,14 +230,18 @@ if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
       const cmd   = parseGithubCommand(githubComment)
       // Add Reaction of "Eyes" as seen.
       if (addReaction(githubClient, "eyes")) {
-        const started  = new Date()  // performance.now()
-        const output   = executeNim(cmd, codes)
-        const finished = new Date()  // performance.now()
-        // Add Reaction of "+1" if success or "-1" if fails.
-        if (addReaction(githubClient, (output.length > 0 ? "+1" : "-1"))) {
-          // Report results back as a comment on the issue.
-          addIssueComment(githubClient, `
-@${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })
+        // Check the same code agaisnt all versions of Nim from devel to 1.0
+        for (let semver of nimFinalVersions) {
+          // Choosenim switch semver
+          console.log(executeChoosenim(semver))
+          // Run code
+          const started  = new Date()  // performance.now()
+          const output   = executeNim(cmd, codes)
+          const finished = new Date()  // performance.now()
+          // Assume OK if output != ""
+          if (output.length > 0) {
+            issueCommentStr += `
+# ${semver}
 <details open=true >
   <summary>Output</summary>
 
@@ -247,8 +274,12 @@ ${ tripleBackticks }asm
 ${ getAsm() }
 ${ tripleBackticks }
 
-</details>`)
+</details>
+`
+          }
         }
+        // Report results back as a comment on the issue.
+        addIssueComment(githubClient, issueCommentStr)
       }
     }
   }
