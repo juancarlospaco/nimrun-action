@@ -243,34 +243,28 @@ if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
           const finished = new Date()  // performance.now()
           // Assume OK if output != ""
           if (output.length > 0) {
-            issueCommentStr += `
-# ${semver}
-<details open=true >
-  <summary>Output</summary>
+            issueCommentStr += `<details><summary>${semver}</summary>
+#### Output
 
 ${ tripleBackticks }
 ${output}
 ${ tripleBackticks }
 
-</details>
-<details>
-  <summary>Stats</summary>
-  <b>created </b>  <code>${ context.payload.comment.created_at }</code><br>
-  <b>started </b>  <code>${ started.toISOString().split('.').shift()  }</code><br>
-  <b>finished</b>  <code>${ finished.toISOString().split('.').shift() }</code><br>
-  <b>duration</b>  <code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
-  <b>filesize</b>  <code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
-  <b>command </b>  <code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
-</details>
-<details>
-  <summary>AST</summary>
+#### Stats
+  <b>created </b>\t<code>${ context.payload.comment.created_at }</code><br>
+  <b>started </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
+  <b>finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code><br>
+  <b>duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
+  <b>filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
+  <b>command </b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
+
+#### AST
 
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }
 
-</details>
-`
+</details>`
           }
         }
         // Report results back as a comment on the issue.
