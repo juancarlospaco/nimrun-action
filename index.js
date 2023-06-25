@@ -156,9 +156,9 @@ function executeChoosenim(semver) {
   console.assert(isSemverOrDevel(semver) , "SemVer must be 'devel' or 'stable' or 'X.Y.Z'");
   // console.assert(fs.existsSync("choosenim"), "Choosenim not found");
   const cmd = "choosenim --noColor --skipClean --yes update "
-  console.log("COMMAND:\t", cmd & semver)
+  console.log("COMMAND:\t", `${cmd} ${semver}`)
   try {
-    return execSync(cmd & semver).toString().trim()
+    return execSync(`${cmd} ${semver}`).toString().trim()
   } catch (error) {
     core.setFailed(error)
     return ""
