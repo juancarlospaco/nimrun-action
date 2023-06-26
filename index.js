@@ -278,9 +278,11 @@ ${ tripleBackticks }
 `
             if (semver === "devel") {
               issueCommentStr += `<h3>AST</h3>
+
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }
+
 `
             }
           }
