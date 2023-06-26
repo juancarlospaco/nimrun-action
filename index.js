@@ -223,8 +223,8 @@ function getIR() {
   else if (fs.existsSync(temporaryFileAsm + "pp")) {
     result = fs.readFileSync(temporaryFileAsm + "pp").toString().trim()
   }
-  else if (fs.existsSync(temporaryOutFile + ".js")) {
-    result = fs.readFileSync(temporaryOutFile + ".js").toString().trim()
+  else if (fs.existsSync(temporaryOutFile)) {
+    result = fs.readFileSync(temporaryOutFile).toString().trim()
   }
   result = result.split('\n').filter(Boolean).join('\n') // Remove empty lines
   result = result.replace(/\/\*[\s\S]*?\*\//g, '')       // Remove comments
