@@ -274,12 +274,15 @@ ${ tripleBackticks }
 <li><b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code>
 <li><b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>
 <li><b>IR LOC ~</b>\t<code>${ getLOC() }</code>
-<li><b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code></ul><h3>AST</h3>
-
+<li><b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code></ul>
+`
+            if (semver === "devel") {
+              issueCommentStr += `<h3>AST</h3>
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }
 `
+            }
           }
           issueCommentStr += "</details>"
         }
@@ -292,10 +295,8 @@ ${ tripleBackticks }
 
 
 /*
-<details>
-  <summary>Deps</summary>
+<h3>Deps</h3>
 ${ tripleBackticks }
 ${ executeGenDepend() }
 ${ tripleBackticks }
-</details>
 */
