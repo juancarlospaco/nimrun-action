@@ -212,13 +212,27 @@ function getLOC() {
   if (fs.existsSync(temporaryFileAsm)) {
     return fs.readFileSync(temporaryFileAsm).toString().trim().split('\n').length
   }
-  if (fs.existsSync(temporaryFileAsm.replace(".c", ".cpp"))) {
-    return fs.readFileSync(temporaryFileAsm.replace(".c", ".cpp")).toString().trim().split('\n').length
+  if (fs.existsSync(temporaryFileAsm + "pp")) {
+    return fs.readFileSync(temporaryFileAsm + "pp").toString().trim().split('\n').length
   }
   if (fs.existsSync(temporaryOutFile + ".js")) {
     return fs.readFileSync(temporaryOutFile + ".js").toString().trim().split('\n').length
   }
   return 0
+}
+
+
+function getIR() {
+  if (fs.existsSync(temporaryFileAsm)) {
+    return fs.readFileSync(temporaryFileAsm).toString().trim()
+  }
+  if (fs.existsSync(temporaryFileAsm + "pp")) {
+    return fs.readFileSync(temporaryFileAsm + "pp").toString().trim()
+  }
+  if (fs.existsSync(temporaryOutFile + ".js")) {
+    return fs.readFileSync(temporaryOutFile + ".js").toString().trim()
+  }
+  return ""
 }
 
 
@@ -276,13 +290,18 @@ ${ tripleBackticks }
 <li><b>IR LOC ~</b>\t<code>${ getLOC() }</code>
 <li><b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code></ul>
 `
-            if (semver === "devel") {
+            if (semver === "devel" || semver === "stable") {
               issueCommentStr += `<h3>AST</h3>
 
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }
 
+<h3>IR</h3>
+
+${ tripleBackticks }cpp
+${ getIR() }
+${ tripleBackticks }
 `
             }
           }
