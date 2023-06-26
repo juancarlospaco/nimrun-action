@@ -173,10 +173,11 @@ function executeNim(cmd, codes) {
   }
   console.log("COMMAND:\t", cmd)
   try {
-    return execSync(cmd).toString().trim()
+    return [true, execSync(cmd).toString().trim()]
   } catch (error) {
-    core.setFailed(error)
-    return ""
+    // core.setFailed(error)
+    console.warn(error)
+    return [false, `${error}`]
   }
 }
 
@@ -254,35 +255,34 @@ if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
           console.log(executeChoosenim(semver))
           // Run code
           const started  = new Date()  // performance.now()
-          const output   = executeNim(cmd, codes)
+          const [isOk, output] = executeNim(cmd, codes)
           const finished = new Date()  // performance.now()
-          // Assume OK if output != ""
-          if (output.length > 0) {
-            const thumbsUpOrThumbsDown = (output.length > 0 ? ":+1:" : ":-1:")
-            issueCommentStr += `<details><summary title="Repro using Nim ${semver}">${semver}\t${thumbsUpOrThumbsDown}</summary>
-
-#### Output
+          const thumbsUp = (isOk ? ":+1:" : ":-1:")
+          // Append to reports
+          issueCommentStr += `<details><summary>${semver}\t${thumbsUp}</summary><h3>Output</h3>
 
 ${ tripleBackticks }
 ${output}
 ${ tripleBackticks }
-
-#### Stats
-- <b>Created </b>\t<code>${ context.payload.comment.created_at }</code><br>
-- <b>Started </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
-- <b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code><br>
-- <b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
-- <b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
-- <b>IR LOC ~</b>\t<code>${ getLOC() }</code><br>
-- <b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
-
-#### AST
+`
+          // Iff Ok add meta info
+          if (isOk) {
+            issueCommentStr += `<h3>Stats</h3>
+- <b>Created </b>\t<code>${ context.payload.comment.created_at }</code>
+- <b>Started </b>\t<code>${ started.toISOString().split('.').shift()  }</code>
+- <b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code>
+- <b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code>
+- <b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>
+- <b>IR LOC ~</b>\t<code>${ getLOC() }</code>
+- <b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code>
+<h3>AST</h3>
 
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }
-</details>`
+`
           }
+          issueCommentStr += "</details>"
         }
         // Report results back as a comment on the issue.
         addIssueComment(githubClient, issueCommentStr)
