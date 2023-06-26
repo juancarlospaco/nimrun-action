@@ -145,6 +145,7 @@ function parseGithubCommand(comment) {
     // }
     result = result.replace("@github-actions", "")
     result = result + extraFlags
+    result = "time " + result
     return result.trim()
   } else {
     core.setFailed("Github comment must start with '@github-actions nim c' or '@github-actions nim cpp' or '@github-actions nim js'")
@@ -172,15 +173,7 @@ function executeNim(cmd, codes) {
   }
   console.log("COMMAND:\t", cmd)
   try {
-    let result = execSync(`${cmd} && echo $!`, {encoding: 'utf8'}).trim()
-    // Get the PID
-    const lines = result.split('\n')
-    const last1 = lines[lines.length - 1]
-    const pid = parseInt(last1)
-    // Get the memory usage
-    const memUsage = execSync(`pmap -x ${pid} | grep total`)
-    console.log("memUsage\t", memUsage)
-    return result
+    return execSync(cmd).toString().trim()
   } catch (error) {
     core.setFailed(error)
     return ""
