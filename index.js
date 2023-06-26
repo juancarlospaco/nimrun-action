@@ -217,17 +217,21 @@ function executeAstGen(codes) {
 
 function getIR() {
   let result = ""
+  // Target C
   if (fs.existsSync(temporaryFileAsm)) {
     result = fs.readFileSync(temporaryFileAsm).toString().trim()
   }
+  // Target C++
   else if (fs.existsSync(temporaryFileAsm + "pp")) {
     result = fs.readFileSync(temporaryFileAsm + "pp").toString().trim()
   }
+  // Target JS
   else if (fs.existsSync(temporaryOutFile)) {
     result = fs.readFileSync(temporaryOutFile).toString().trim()
   }
-  result = result.split('\n').filter(Boolean).join('\n') // Remove empty lines
-  result = result.replace(/\/\*[\s\S]*?\*\//g, '')       // Remove comments
+  // Clean outs
+  result = result.split('\n').filter(line => line.trim() !== '').join('\n') // Remove empty lines
+  result = result.replace(/\/\*[\s\S]*?\*\//g, '')                          // Remove comments
   return result
 }
 
