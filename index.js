@@ -14,7 +14,7 @@ const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
-const extraFlags       = " --run -d:strip -d:nimDisableCertificateValidation --forceBuild:on --colors:off --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
+const extraFlags       = " --run -d:strip -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
 const nimFinalVersions = ["devel", "stable", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
 
 
@@ -145,7 +145,7 @@ function parseGithubCommand(comment) {
     // }
     result = result.replace("@github-actions", "")
     result = result + extraFlags
-    result = "time " + result
+    // result = "time " + result
     return result.trim()
   } else {
     core.setFailed("Github comment must start with '@github-actions nim c' or '@github-actions nim cpp' or '@github-actions nim js'")
@@ -156,7 +156,7 @@ function parseGithubCommand(comment) {
 function executeChoosenim(semver) {
   console.assert(isSemverOrDevel(semver) , "SemVer must be 'devel' or 'stable' or 'X.Y.Z'");
   const cmd = "CHOOSENIM_NO_ANALYTICS=1 choosenim --noColor --skipClean --yes update "
-  console.log("COMMAND:\t", `${cmd} ${semver}`)
+  // console.log("COMMAND:\t", `${cmd} ${semver}`)
   try {
     return execSync(`${cmd} ${semver}`).toString().trim()
   } catch (error) {
@@ -208,15 +208,15 @@ function executeAstGen(codes) {
 
 
 // Too verbose, can exceed maximum message len for comments and --asm wont work on old Nim versions.
-// function getAsm() {
-//   if (fs.existsSync(temporaryFileAsm + ".asm")) {
-//     return fs.readFileSync(temporaryFileAsm + ".asm").toString().trim()
-//   }
-//   if (fs.existsSync(temporaryFileAsm + "pp.asm")) {
-//     return fs.readFileSync(temporaryFileAsm + "pp.asm").toString().trim()
-//   }
-//   return ""
-// }
+function getAsm() {
+  if (fs.existsSync(temporaryFileAsm + ".asm")) {
+    return fs.readFileSync(temporaryFileAsm + ".asm").toString().trim()
+  }
+  if (fs.existsSync(temporaryFileAsm + "pp.asm")) {
+    return fs.readFileSync(temporaryFileAsm + "pp.asm").toString().trim()
+  }
+  return ""
+}
 
 
 // Only run if this is an "issue_comment" and checkAuthorAssociation.
@@ -246,11 +246,13 @@ if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
           if (output.length > 0) {
             const thumbsUpOrThumbsDown = (output.length > 0 ? ":+1:" : ":-1:")
             issueCommentStr += `<details><summary title="Repro using Nim ${semver}">${semver}\t${thumbsUpOrThumbsDown}</summary>
+
 #### Output
 
 ${ tripleBackticks }
 ${output}
 ${ tripleBackticks }
+
 #### Stats
 - <b>created </b>\t<code>${ context.payload.comment.created_at }</code><br>
 - <b>started </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
