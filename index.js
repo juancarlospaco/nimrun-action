@@ -267,15 +267,14 @@ ${ tripleBackticks }
 `
           // Iff Ok add meta info
           if (isOk) {
-            issueCommentStr += `<h3>Stats</h3>
-- <b>Created </b>\t<code>${ context.payload.comment.created_at }</code>
-- <b>Started </b>\t<code>${ started.toISOString().split('.').shift()  }</code>
-- <b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code>
-- <b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code>
-- <b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>
-- <b>IR LOC ~</b>\t<code>${ getLOC() }</code>
-- <b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code>
-<h3>AST</h3>
+            issueCommentStr += `<h3>Stats</h3><ul>
+<li><b>Created </b>\t<code>${ context.payload.comment.created_at }</code>
+<li><b>Started </b>\t<code>${ started.toISOString().split('.').shift()  }</code>
+<li><b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code>
+<li><b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code>
+<li><b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>
+<li><b>IR LOC ~</b>\t<code>${ getLOC() }</code>
+<li><b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code></ul><h3>AST</h3>
 
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
