@@ -14,7 +14,7 @@ const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
-const extraFlags       = " --run -d:strip -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
+const extraFlags       = " --run -d:strip -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --threads:off --verbosity:1 --hints:on --hint:exec:off --hint:conf:off --hint:link:off --hint:processing:off --warnings:off --lineTrace:off --styleCheck:off --hint:cc:off" + preparedFlags
 const nimFinalVersions = ["devel", "stable", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
 
 
@@ -268,13 +268,13 @@ ${output}
 ${ tripleBackticks }
 
 #### Stats
-- <b>created   </b>\t<code>${ context.payload.comment.created_at }</code><br>
-- <b>started   </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
-- <b>finished  </b>\t<code>${ finished.toISOString().split('.').shift() }</code><br>
-- <b>duration  </b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
-- <b>filesize  </b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
-- <b>Output LOC</b>\t<code>${ getLOC() }</code><br>
-- <b>command   </b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
+- <b>Created </b>\t<code>${ context.payload.comment.created_at }</code><br>
+- <b>Started </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
+- <b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code><br>
+- <b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
+- <b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
+- <b>IR LOC ~</b>\t<code>${ getLOC() }</code><br>
+- <b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
 
 #### AST
 
