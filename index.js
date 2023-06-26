@@ -193,7 +193,7 @@ function executeGenDepend() {
   // Generate a dependency graph in ASCII Art, because Github markdown dont support SVG.
   // If this fails because missing graph-easy, then it returns empty string.
   try {
-    execSync(`nim genDepend --verbosity:0 --hints:off --warnings:off ${ temporaryFile }`)
+    execSync(`nim genDepend --verbosity:0 --hints:off --warnings:off --colors:off ${ temporaryFile }`)
     return execSync(`graph-easy ${ temporaryFile.replace(".nim", ".dot") }`).toString()
   } catch (error) {
     console.warn(error)
@@ -204,7 +204,7 @@ function executeGenDepend() {
 
 
 function executeAstGen(codes) {
-  const cmd2 = "nim check --verbosity:0 --hints:off --warnings:off --import:std/macros "
+  const cmd2 = "nim check --verbosity:0 --hints:off --warnings:off --colors:off --lineTrace:off --import:std/macros "
   fs.writeFileSync(temporaryFile2, "dumpAstGen:\n" + indentString(codes, 2))
   try {
     return execSync(cmd2 + temporaryFile2).toString().trim()
@@ -215,31 +215,20 @@ function executeAstGen(codes) {
 }
 
 
-function getLOC() {
-  if (fs.existsSync(temporaryFileAsm)) {
-    return fs.readFileSync(temporaryFileAsm).toString().trim().split('\n').length
-  }
-  if (fs.existsSync(temporaryFileAsm + "pp")) {
-    return fs.readFileSync(temporaryFileAsm + "pp").toString().trim().split('\n').length
-  }
-  if (fs.existsSync(temporaryOutFile + ".js")) {
-    return fs.readFileSync(temporaryOutFile + ".js").toString().trim().split('\n').length
-  }
-  return 0
-}
-
-
 function getIR() {
+  let result = ""
   if (fs.existsSync(temporaryFileAsm)) {
-    return fs.readFileSync(temporaryFileAsm).toString().trim()
+    result = fs.readFileSync(temporaryFileAsm).toString().trim()
   }
-  if (fs.existsSync(temporaryFileAsm + "pp")) {
-    return fs.readFileSync(temporaryFileAsm + "pp").toString().trim()
+  else if (fs.existsSync(temporaryFileAsm + "pp")) {
+    result = fs.readFileSync(temporaryFileAsm + "pp").toString().trim()
   }
-  if (fs.existsSync(temporaryOutFile + ".js")) {
-    return fs.readFileSync(temporaryOutFile + ".js").toString().trim()
+  else if (fs.existsSync(temporaryOutFile + ".js")) {
+    result = fs.readFileSync(temporaryOutFile + ".js").toString().trim()
   }
-  return ""
+  result = result.split('\n').filter(Boolean).join('\n') // Remove empty lines
+  result = result.replace(/\/\*[\s\S]*?\*\//g, '')       // Remove comments
+  return result
 }
 
 
@@ -294,11 +283,8 @@ ${ tripleBackticks }
 <li><b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code>
 <li><b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code>
 <li><b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>
-<li><b>IR LOC ~</b>\t<code>${ getLOC() }</code>
 <li><b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code></ul>
-`
-            if (semver === "devel" || semver === "stable") {
-              issueCommentStr += `<h3>AST</h3>
+<h3>AST</h3>
 
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
@@ -310,7 +296,6 @@ ${ tripleBackticks }cpp
 ${ getIR() }
 ${ tripleBackticks }
 `
-            }
           }
           issueCommentStr += "</details>"
         }
