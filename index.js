@@ -207,6 +207,20 @@ function executeAstGen(codes) {
 }
 
 
+function getLOC() {
+  if (fs.existsSync(temporaryFileAsm)) {
+    return fs.readFileSync(temporaryFileAsm).toString().trim().split('\n').length
+  }
+  if (fs.existsSync(temporaryFileAsm.replace(".c", ".cpp"))) {
+    return fs.readFileSync(temporaryFileAsm.replace(".c", ".cpp")).toString().trim().split('\n').length
+  }
+  if (fs.existsSync(temporaryOutFile + ".js")) {
+    return fs.readFileSync(temporaryOutFile + ".js").toString().trim().split('\n').length
+  }
+  return 0
+}
+
+
 // Too verbose, can exceed maximum message len for comments and --asm wont work on old Nim versions.
 function getAsm() {
   if (fs.existsSync(temporaryFileAsm + ".asm")) {
@@ -254,12 +268,13 @@ ${output}
 ${ tripleBackticks }
 
 #### Stats
-- <b>created </b>\t<code>${ context.payload.comment.created_at }</code><br>
-- <b>started </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
-- <b>finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code><br>
-- <b>duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
-- <b>filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
-- <b>command </b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
+- <b>created   </b>\t<code>${ context.payload.comment.created_at }</code><br>
+- <b>started   </b>\t<code>${ started.toISOString().split('.').shift()  }</code><br>
+- <b>finished  </b>\t<code>${ finished.toISOString().split('.').shift() }</code><br>
+- <b>duration  </b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code><br>
+- <b>filesize  </b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code><br>
+- <b>Output LOC</b>\t<code>${ getLOC() }</code><br>
+- <b>command   </b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code><br>
 
 #### AST
 
