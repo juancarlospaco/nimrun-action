@@ -13,7 +13,6 @@ const temporaryFile    = `${ process.cwd() }/temp.nim`
 const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
-const tempDepsOutFile  = temporaryFile.replace(".nim", ".deps")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
 const extraFlags       = " --run -d:strip -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off --genDeps:on" + preparedFlags
 const nimFinalVersions = ["devel", "stable", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
@@ -222,14 +221,6 @@ function getLOC() {
 }
 
 
-function getDeps() {
-  if (fs.existsSync(tempDepsOutFile)) {
-    return fs.readFileSync(tempDepsOutFile).toString().replace(process.cwd(), "").trim()
-  }
-  return ""
-}
-
-
 // Too verbose, can exceed maximum message len for comments and --asm wont work on old Nim versions.
 function getAsm() {
   if (fs.existsSync(temporaryFileAsm + ".asm")) {
@@ -289,12 +280,6 @@ ${ tripleBackticks }
 
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
-${ tripleBackticks }
-
-#### Deps
-
-${ tripleBackticks }
-${ getDeps() }
 ${ tripleBackticks }
 </details>`
           }
