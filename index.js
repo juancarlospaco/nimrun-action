@@ -15,7 +15,14 @@ const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
 const extraFlags       = " --run -d:strip -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off" + preparedFlags
-const nimFinalVersions = ["devel", "stable", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
+// const nimFinalVersions = ["devel", "stable", "1.6.0", "1.4.0", "1.2.0", "1.0.0"]
+const nimFinalVersions = [
+  "devel", "stable",
+  "1.6.10", "1.6.4", "1.6.0",
+  "1.4.8",  "1.4.4", "1.4.0",
+  "1.2.18", "1.2.10", "1.2.0",
+  "1.0.10", "1.0.4", "1.0.0",
+]
 
 
 const cfg = (key) => {
