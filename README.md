@@ -7,6 +7,11 @@ https://user-images.githubusercontent.com/1189414/207674682-c971f842-b4ef-42a3-8
 
 ![](https://raw.githubusercontent.com/juancarlospaco/nimrun-action/nim/screenshot.png)
 
+# Setup
+
+- Go to https://github.com/USER/REPO/settings/actions
+- Find "Workflow permissions" section.
+- Enable "Read and write permissions".
 
 # Use
 
