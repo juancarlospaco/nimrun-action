@@ -271,7 +271,7 @@ if (context.eventName === "issue_comment" && checkAuthorAssociation()) {
           const started  = new Date()  // performance.now()
           const [isOk, output] = executeNim(cmd, codes)
           const finished = new Date()  // performance.now()
-          const thumbsUp = (isOk ? ":+1:" : ":-1:")
+          const thumbsUp = (isOk ? ":white_check_mark:" : ":red_square:")
           // Append to reports
           issueCommentStr += `<details><summary>${semver}\t${thumbsUp}</summary><h3>Output</h3>
 
