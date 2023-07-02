@@ -88,10 +88,7 @@ function getFilesizeInBytes(filename) {
 
 function checkAuthorAssociation() {
   const authorPerm = context.payload.comment.author_association.toLowerCase().trim()
-  if ( authorPerm === "owner" ) {
-    return true
-  }
-  if ( authorPerm === "collaborator" ) {
+  if (authorPerm === "owner" || authorPerm === "collaborator" || authorPerm === "member") {
     return true
   }
   return false
