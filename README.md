@@ -54,7 +54,7 @@ jobs:
 
 # Examples
 
-Actually used in Nim official repo:
+Used by Nim official repo:
 
 - https://github.com/nim-lang/Nim/issues/16933#issuecomment-1620907872
 - https://github.com/nim-lang/Nim/pull/22157#issuecomment-1620858856
