@@ -86,3 +86,5 @@ Used by Nim official repo:
 
 ![](https://starchart.cc/juancarlospaco/nimrun-action.svg)
 :star: [@juancarlospaco](https://github.com/juancarlospaco '2023-07-06')
+:star: [@moigagoo](https://github.com/moigagoo '2023-07-06')	
+:star: [@planetis-m](https://github.com/planetis-m '2023-07-06')	
