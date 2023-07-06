@@ -70,13 +70,6 @@ Actually used in Nim official repo:
 - https://nim-lang.org/blog/2023/01/11/this-month-with-nim.html
 
 
-# FAQ
-
-- Why not take care of setting up Nim by itself?.
-
-The Bot will change a lot of Nim versions and re-compile Nim commit-by-commit to find the commit that introduced the bug.
-
-
 <!--
 # Security
 
@@ -87,4 +80,4 @@ The Bot will change a lot of Nim versions and re-compile Nim commit-by-commit to
 # Stars
 
 ![](https://starchart.cc/juancarlospaco/nimrun-action.svg)
-:star: [@juancarlospaco](https://github.com/juancarlospaco '2023-07-06')	
+:star: [@juancarlospaco](https://github.com/juancarlospaco '2023-07-06')
