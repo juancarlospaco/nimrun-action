@@ -5,9 +5,6 @@
 https://user-images.githubusercontent.com/1189414/207674682-c971f842-b4ef-42a3-81b2-62e1c378d5a4.mp4
 
 
-![](https://raw.githubusercontent.com/juancarlospaco/nimrun-action/nim/screenshot.png)
-
-
 The bot will run the code on all Nim final versions from `1.0.0` to `devel`,
 finds at least 1 commit that fails and finds at least 1 commit that works,
 bisects commit-by-commit between that range of commits (FAILS..WORKS),
