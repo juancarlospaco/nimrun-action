@@ -7,11 +7,13 @@ https://user-images.githubusercontent.com/1189414/207674682-c971f842-b4ef-42a3-8
 
 ![](https://raw.githubusercontent.com/juancarlospaco/nimrun-action/nim/screenshot.png)
 
+
 # Setup
 
 - Go to https://github.com/USER/REPO/settings/actions
 - Find "Workflow permissions" section.
 - Enable "Read and write permissions".
+
 
 # Use
 
@@ -32,18 +34,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-- Nim version to use depends on `nim-version` of `jiro4989/setup-nim-action`.
 - `@github-actions` adds :eyes: Reaction to your Github issue comment when seen.
-- `@github-actions` adds :+1: Reaction to your Github issue comment when your code compiles and runs OK.
-- `@github-actions` adds :-1: Reaction to your Github issue comment when your code fails to run.
-- `@github-actions` adds 1 new Github issue comment with the results and stats about your code.
+- `@github-actions` adds 1 new Github issue comment with the Bisect results and stats about your code.
 
-The Bot will match Github issue comments that starts with:
+The Bot will match Github issue comments that first line starts with:
 
-- `"@github-actions nim c"`
-- `"@github-actions nim cpp"`
-- `"@github-actions nim js"`
-- `"@github-actions nim e"`
+- `"!nim c"`
+- `"!nim cpp"`
+- `"!nim js"`
 
 And followed by a code block of Nim source code.
 
@@ -51,11 +49,6 @@ And followed by a code block of Nim source code.
 # Examples
 
 - https://github.com/juancarlospaco/nimrun-action/issues/3#issuecomment-1351871284
-
-
-# Security
-
-- Only users with write permissions can run code (Admins and Collaborators with push permissions).
 
 
 # Requisites
@@ -67,4 +60,11 @@ And followed by a code block of Nim source code.
 
 - Why not take care of setting up Nim by itself?.
 
-Because some people already do it with just Git or Choosenim or setup-nim-action.
+The Bot will change a lot of Nim versions and re-compile Nim commit-by-commit to find the commit that introduced the bug.
+
+
+<!--
+# Security
+
+- Only users with write permissions can run code (Admins and Collaborators with push permissions).
+-->
