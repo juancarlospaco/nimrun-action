@@ -1,11 +1,28 @@
 # Nimrun-Action
 
-- [GitHub Action](https://github.com/features/actions) to bisect commit-by-commit from GitHub issue comments code blocks.
+- [GitHub Action](https://github.com/features/actions) to bisect bugs commit-by-commit from GitHub issue comments code blocks.
 
 https://user-images.githubusercontent.com/1189414/207674682-c971f842-b4ef-42a3-81b2-62e1c378d5a4.mp4
 
 
 ![](https://raw.githubusercontent.com/juancarlospaco/nimrun-action/nim/screenshot.png)
+
+
+The bot will run the code on all Nim final versions from `1.0.0` to `devel`,
+finds at least 1 commit that fails and finds at least 1 commit that works,
+bisects commit-by-commit between that range of commits (FAILS..WORKS),
+re-builds Nim commit-by-commit and runs the code checking if it works,
+until it finds the specific commit that introduces the Bug.
+
+Users can Bisect their own bugs, core devs get the commit that introduced the bug.
+
+The Bot will match Github issue comments that first line starts with:
+
+- `"!nim c"`
+- `"!nim cpp"`
+- `"!nim js"`
+
+And followed by a code block of Nim source code.
 
 
 # Setup
@@ -36,22 +53,6 @@ jobs:
 
 - `@github-actions` adds :eyes: Reaction to your Github issue comment when seen.
 - `@github-actions` adds 1 new Github issue comment with the Bisect results and stats.
-
-The bot will run the code on all Nim final versions from `1.0.0` to `devel`,
-finds at least 1 commit that fails and finds at least 1 commit that works,
-bisects commit-by-commit between that range of commits (FAILS..WORKS),
-re-builds Nim commit-by-commit and runs the code checking if it works,
-until it finds the specific commit that introduces the Bug.
-
-Users can Bisect their own bugs, core devs get the commit that introduced the bug.
-
-The Bot will match Github issue comments that first line starts with:
-
-- `"!nim c"`
-- `"!nim cpp"`
-- `"!nim js"`
-
-And followed by a code block of Nim source code.
 
 
 # Examples
