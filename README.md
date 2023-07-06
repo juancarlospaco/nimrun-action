@@ -77,3 +77,8 @@ The Bot will change a lot of Nim versions and re-compile Nim commit-by-commit to
 
 - Only users with write permissions can run code (Admins and Collaborators with push permissions).
 -->
+
+
+# Stars
+
+![](https://starchart.cc/juancarlospaco/nimrun-action.svg)
