@@ -65,6 +65,11 @@ Actually used in Nim official repo:
 - `jiro4989/setup-nim-action` to setup Nim.
 
 
+# Articles
+
+- https://nim-lang.org/blog/2023/01/11/this-month-with-nim.html
+
+
 # FAQ
 
 - Why not take care of setting up Nim by itself?.
