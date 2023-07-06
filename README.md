@@ -5,13 +5,18 @@
 https://user-images.githubusercontent.com/1189414/207674682-c971f842-b4ef-42a3-81b2-62e1c378d5a4.mp4
 
 
-The bot will run the code on all Nim final versions from `1.0.0` to `devel`,
-finds at least 1 commit that fails and finds at least 1 commit that works,
+The bot will run the provided code on all Nim final versions from `1.0.0` to `devel`,
+then finds at least 1 commit that fails and finds at least 1 commit that works,
 bisects commit-by-commit between that range of commits (FAILS..WORKS),
 re-builds Nim commit-by-commit and runs the code checking if it works,
-until it finds the specific commit that introduces the Bug.
+until it finds 1 specific commit that introduces the Bug,
+it says who, when, why, link, and files with the bug,
+also reports debug info like output, IR (C/JS), AST, date/time/duration,
+compiled file size, commits near with link, commits per second, etc.
 
 Users can Bisect their own bugs, core devs get the commit that introduced the bug.
+
+**The reduced bug repro code sample should be as tiny and simple as possible for faster performance but must have asserts.**
 
 The Bot will match Github issue comments that first line starts with:
 
