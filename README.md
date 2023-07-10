@@ -91,3 +91,4 @@ Used by Nim official repo:
 :star: [@geotre](https://github.com/geotre '2023-07-07')	
 :star: [@georgelemon](https://github.com/georgelemon '2023-07-07')	
 :star: [@gabbhack](https://github.com/gabbhack '2023-07-07')	
+:star: [@termermc](https://github.com/termermc '2023-07-10')	
