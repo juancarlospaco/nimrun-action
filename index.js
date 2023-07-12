@@ -16,7 +16,7 @@ const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
 const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
-const extraFlags       = " --run -d:strip -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --threads:off --verbosity:0 --hints:off --warnings:off --lineTrace:off "
+const extraFlags       = " --run -d:strip -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --verbosity:0 --hints:off --warnings:off --lineTrace:off "
 const nimFinalVersions = ["devel", "stable", "1.6.0", "1.4.0", "1.2.0", "1.0.0", "0.20.2"]
 const choosenimNoAnal  = {env: {...process.env, CHOOSENIM_NO_ANALYTICS: '1'}}
 const debugGodModes    = ["araq"]
@@ -30,11 +30,6 @@ const cfg = (key) => {
   console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
   return result;
 };
-
-
-const indentString = (str, count, indent = ' ') => {
-  return str.replace(/^/gm, indent.repeat(count))
-}
 
 
 function formatDuration(seconds) {
@@ -134,6 +129,7 @@ function parseGithubComment(comment) {
   for (const token of tokens) {
     if (token.type === 'code' && token.lang === 'nim' && token.text.length > 0) {
       result = token.text.trim()
+      result = result.split('\n').filter(line => line.trim() !== '').join('\n') // Remove empty lines
       console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
       return result
     }
@@ -144,6 +140,10 @@ function parseGithubComment(comment) {
 function parseGithubCommand(comment) {
   console.assert(typeof comment === "string", `comment must be string, but got ${ typeof comment }`)
   let result = comment.trim().split("\n")[0].trim()
+  const bannedSeps = [";", "&&", "||"]
+  if (bannedSeps.some(s => result.includes(s))) {
+    core.setFailed(`Github comment must not contain ${bannedSeps}`)
+  }
   if (result.startsWith("!nim c") || result.startsWith("!nim cpp") || result.startsWith("!nim js")) {
     if (result.startsWith("!nim js")) {
       result = result + " -d:nodejs -d:nimExperimentalAsyncjsThen "
@@ -196,7 +196,7 @@ function executeNim(cmd, codes) {
 
 function executeAstGen(codes) {
   console.assert(typeof codes === "string", `codes must be string, but got ${ typeof codes }`)
-  fs.writeFileSync(temporaryFile2, "dumpAstGen:\n" + indentString(codes, 2))
+  fs.writeFileSync(temporaryFile2, `dumpAstGen(\n${codes}\n)`)
   try {
     return execSync(`nim check --verbosity:0 --hints:off --warnings:off --colors:off --lineTrace:off --forceBuild:on --import:std/macros ${temporaryFile2}`).toString().trim()
   } catch (error) {
@@ -241,7 +241,7 @@ function gitMetadata(commit) {
   // Git get useful metadata from current commit
   console.assert(typeof commit === "string", `commit must be string, but got ${ typeof commit }`)
   console.log(execSync(`git checkout ${ commit.replace("#", "") }`, {cwd: gitTempPath}).toString())
-  const user   = execSync("git log -1 --pretty=format:'%an'", {cwd: gitTempPath}).toString().trim()
+  const user   = execSync("git log -1 --pretty=format:'%an'", {cwd: gitTempPath}).toString().trim().toLowerCase()
   const mesage = execSync("git log -1 --pretty='%B'", {cwd: gitTempPath}).toString().trim()
   const date   = execSync("git log -1 --pretty=format:'%ai'", {cwd: gitTempPath}).toString().trim().toLowerCase()
   const files  = execSync("git diff-tree --no-commit-id --name-only -r HEAD", {cwd: gitTempPath}).toString().trim()
@@ -272,6 +272,8 @@ function gitCommitForVersion(semver) {
     result = "7e83adf"
   } else if (semver === "1.0.0") {
     result = "f7a8fc4"
+  } else if (semver === "0.20.2") {
+    result = "88a0edb"
   } else if (semver === "devel" || semver === "stable") {
     // For semver === "devel" or semver === "stable" we use choosenim
     executeChoosenim(semver) // devel and stable are moving targets.
@@ -334,7 +336,7 @@ ${ tripleBackticks }\n
           // Iff NOT Ok add AST and IR info for debugging purposes.
           if (!isOk) {
             issueCommentStr += `
-<h3>IR</h3>\n
+<h3>IR</h3><b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>\n
 ${ tripleBackticks }cpp
 ${ getIR() }
 ${ tripleBackticks }\n
