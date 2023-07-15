@@ -92,3 +92,4 @@ Used by Nim official repo:
 :star: [@georgelemon](https://github.com/georgelemon '2023-07-07')	
 :star: [@gabbhack](https://github.com/gabbhack '2023-07-07')	
 :star: [@termermc](https://github.com/termermc '2023-07-10')	
+:star: [@solarizedalias](https://github.com/solarizedalias '2023-07-15')	
