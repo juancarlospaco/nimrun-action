@@ -26,6 +26,14 @@ The Bot will match Github issue comments that first line starts with:
 
 And followed by a code block of Nim source code.
 
+If you want to provide additional files:
+
+- Add 1 new code block with C syntax to be saved as `./temp.c`.
+- Add 1 new code block with C++ syntax to be saved as `./temp.cpp`.
+- Add 1 new code block with C Header syntax to be saved as `./temp.h`.
+- Add 1 new code block with JS syntax to be saved as `./temp.js`.
+- Add 1 new code block with CFG syntax to be saved as `./temp.nim.cfg`.
+
 
 # Setup
 
