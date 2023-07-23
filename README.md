@@ -24,7 +24,7 @@ The Bot will match Github issue comments that first line starts with:
 - `"!nim cpp"`
 - `"!nim js"`
 
-And followed by a code block of Nim source code.
+And followed by 1 code block of Nim source code.
 
 If you want to provide additional files:
 
