@@ -15,10 +15,11 @@ const temporaryFile    = `${ process.cwd() }/temp.nim`
 const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
-const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile} `
-const extraFlags       = " --run -d:strip -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --verbosity:0 --hints:off --warnings:off --lineTrace:off "
+const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile}`
+const extraFlags       = " -d:useMalloc -d:nimArcDebug -d:nimArcIds -d:nimDebugDlOpen -d:stacktraceMsgs -d:nimCompilerStacktraceHints -d:ssl -d:nimDisableCertificateValidation --debugger:native --forceBuild:on --debuginfo:on --colors:off --verbosity:0 --hints:off --warnings:off --lineTrace:off "
 const nimFinalVersions = ["devel", "stable", "1.6.0", "1.4.0", "1.2.0", "1.0.0", "0.20.2"]
-const choosenimNoAnal  = {env: {...process.env, CHOOSENIM_NO_ANALYTICS: '1'}}
+const choosenimNoAnal  = {env: {...process.env, CHOOSENIM_NO_ANALYTICS: "1", SOURCE_DATE_EPOCH: Math.floor(Date.now() / 1000).toString()}}  // SOURCE_DATE_EPOCH is same in all runs.
+const valgrindLeakChck = {env: {...process.env, VALGRIND_OPTS: "--tool=memcheck --leak-check=full --show-leak-kinds=all --undef-value-errors=yes --track-origins=yes --show-error-list=yes --keep-debuginfo=yes --show-emwarns=yes --demangle=yes --smc-check=none --num-callers=9 --max-threads=9"}}
 const debugGodModes    = ["araq"]
 const unlockedAllowAll = true  // true == Users can Bisect  |  false == Only Admins can Bisect.
 const commentPrefix = "!nim "
@@ -32,27 +33,25 @@ const cfg = (key) => {
 };
 
 
+const indentString = (str, count = 2, indent = ' ') => {
+  return str.replace(/^/gm, indent.repeat(count))
+}
+
+
 function formatDuration(seconds) {
   if (typeof seconds === "string") {
-    seconds = parseInt(seconds)
+    seconds = parseInt(seconds, 10)
   }
   console.assert(typeof seconds === "number", `seconds must be number, but got ${ typeof seconds }`)
-  function numberEnding(number) {
-    return (number > 1) ? 's' : '';
-  }
   let result = "now"
-  if (seconds > 0) {
-      const years   = Math.floor(seconds   / 31536000);
-      const days    = Math.floor((seconds  % 31536000) / 86400);
+  if (!isNaN(seconds) && seconds > 0) {
       const hours   = Math.floor(((seconds % 31536000) % 86400) / 3600);
       const minutes = Math.floor(((seconds % 31536000) % 86400) %  60);
       const second  = (((seconds % 31536000) % 86400)  % 3600)  % 0;
-      const r = (years   > 0) ? years   + " year"   + numberEnding(years)   : "";
-      const x = (days    > 0) ? days    + " day"    + numberEnding(days)    : "";
-      const y = (hours   > 0) ? hours   + " hour"   + numberEnding(hours)   : "";
-      const z = (minutes > 0) ? minutes + " minute" + numberEnding(minutes) : "";
-      const u = (second  > 0) ? second  + " second" + numberEnding(second)  : "";
-      result = r + x + y + z + u
+      const y = (hours   > 0) ? hours   + " hours"   : "";
+      const z = (minutes > 0) ? minutes + " minutes" : "";
+      const u = (second  > 0) ? second  + " seconds" : "";
+      result = y + z + u
   }
   console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
   return result
@@ -61,13 +60,14 @@ function formatDuration(seconds) {
 
 function formatSizeUnits(bytes) {
   console.assert(typeof bytes === "number", `bytes must be number, but got ${ typeof bytes }`)
+  const bites = ` (${ bytes.toLocaleString() } bytes)`
   if      (bytes >= 1073741824) { bytes = (bytes / 1073741824).toFixed(2) + " Gb"; }
   else if (bytes >= 1048576)    { bytes = (bytes / 1048576).toFixed(2) + " Mb"; }
   else if (bytes >= 1024)       { bytes = (bytes / 1024).toFixed(2) + " Kb"; }
   else if (bytes >  1)          { bytes = bytes + " bytes"; }
   else if (bytes == 1)          { bytes = bytes + " byte"; }
   else                          { bytes = "0 bytes"; }
-  return bytes;
+  return bytes + bites;
 }
 
 
@@ -177,9 +177,17 @@ function parseGithubCommand(comment) {
   }
   if (result.startsWith("!nim c") || result.startsWith("!nim cpp") || result.startsWith("!nim js")) {
     if (result.startsWith("!nim js")) {
-      result = result + " -d:nodejs -d:nimExperimentalAsyncjsThen "
+      result = result + " -d:nodejs -d:nimExperimentalAsyncjsThen --run "
+    } else if (result.includes("--gc:arc") || result.includes("--gc:orc") || result.includes("--gc:atomicArc")) {
+      // If ARC or ORC then add " -d:nimAllocPagesViaMalloc " for Valgrind.
+      // "--expandArc:main" can not be used because it was added last.
+      result = result + " -d:nimAllocPagesViaMalloc "
     }
     result = result + extraFlags + preparedFlags
+    if (result.startsWith("!nim c") || result.startsWith("!nim cpp")) {
+      // If Valgrind is installed, then use Valgrind, else just run it.
+      result = result + ` && valgrind ${temporaryOutFile}`
+    }
     result = result.substring(1) // Remove the leading "!"
     console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
     return result.trim()
@@ -217,7 +225,7 @@ function executeNim(cmd, codes) {
   }
   console.log("COMMAND:\t", cmd)
   try {
-    return [true, execSync(cmd).toString().trim()]
+    return [true, execSync(cmd, valgrindLeakChck).toString().trim()]
   } catch (error) {
     console.warn(error)
     return [false, `${error}`]
@@ -227,7 +235,7 @@ function executeNim(cmd, codes) {
 
 function executeAstGen(codes) {
   console.assert(typeof codes === "string", `codes must be string, but got ${ typeof codes }`)
-  fs.writeFileSync(temporaryFile2, `dumpAstGen(\n${codes}\n)`)
+  fs.writeFileSync(temporaryFile2, `dumpAstGen:\n${ indentString(codes) }`)
   try {
     return execSync(`nim check --verbosity:0 --hints:off --warnings:off --colors:off --lineTrace:off --forceBuild:on --import:std/macros ${temporaryFile2}`).toString().trim()
   } catch (error) {
@@ -335,7 +343,7 @@ if (context.eventName === "issue_comment" && context.payload.comment.body.trim()
         const githubComment = context.payload.comment.body.trim()
         const codes         = parseGithubComment(githubComment)
         const cmd           = parseGithubCommand(githubComment)
-        let fails           = null
+        let fails           = "devel"
         let works           = null
         let commitsLen      = nimFinalVersions.length
         let issueCommentStr = `@${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })`
@@ -350,7 +358,7 @@ if (context.eventName === "issue_comment" && context.payload.comment.body.trim()
           if (isOk && works === null) {
             works = semver
           }
-          else if (!isOk && fails === null) {
+          else if (!isOk && fails === "devel") {
             fails = semver
           }
           // Append to reports.
@@ -362,12 +370,12 @@ ${ tripleBackticks }\n
 <li><b>Created</b>\t<code>${ context.payload.comment.created_at }</code>
 <li><b>Started</b>\t<code>${ started.toISOString().split('.').shift()  }</code>
 <li><b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code>
-<li><b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000).toFixed(0)) }</code>
-<li><b>Commands</b>\t<code>${ cmd.replace(preparedFlags, "").trim() }</code></ul>\n`
+<li><b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000)) }</code>
+<li><b>Commands</b>\t<code>${ cmd }</code></ul>\n`
           // Iff NOT Ok add AST and IR info for debugging purposes.
           if (!isOk) {
             issueCommentStr += `
-<h3>IR</h3><b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>\n
+<h3>IR</h3><b>Compiled filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>\n
 ${ tripleBackticks }cpp
 ${ getIR() }
 ${ tripleBackticks }\n
@@ -381,7 +389,7 @@ ${ tripleBackticks }\n`
 
 
         // This part is about finding the specific commit that breaks
-        if (works !== null && fails !== null) {
+        if (works !== null) {
           // Get a range of commits between "FAILS..WORKS"
           gitInit()
           const failsCommit = gitCommitForVersion(fails)
@@ -454,7 +462,7 @@ ${commitsNear}
         else { console.warn("works and fails not found, at least 1 working commit and 1 non-working commit are required for Bisect commit-by-commit.") }
         // Report results back as a comment on the issue.
         const duration = ((( (new Date()) - startedDatetime) % 60000) / 1000)
-        issueCommentStr += `:robot: Bug found in <code>${ formatDuration(duration.toFixed(0)) }</code> bisecting <code>${commitsLen}</code> commits at <code>${ Math.round(commitsLen / duration) }</code> commits per second.`
+        issueCommentStr += `:robot: Bug found in <code>${ formatDuration(duration) }</code> bisecting <code>${commitsLen}</code> commits at <code>${ Math.round(commitsLen / duration) }</code> commits per second.`
         addIssueComment(githubClient, issueCommentStr)
     }
     else { console.warn("githubClient.addReaction failed, repo permissions error?.") }
