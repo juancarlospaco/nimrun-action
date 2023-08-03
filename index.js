@@ -303,7 +303,9 @@ function gitCommitForVersion(semver) {
   console.assert(typeof semver === "string", `semver must be string, but got ${ typeof semver }`)
   let result = null
   semver     = semver.trim().toLowerCase()
-  if (semver === "1.6.0") {
+  if (semver === "2.0.0") {
+    result = "a488067"
+  } else if (semver === "1.6.0") {
     result = "727c637"
   } else if (semver === "1.4.0") {
     result = "018ae96"
