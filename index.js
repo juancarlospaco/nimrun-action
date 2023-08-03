@@ -15,9 +15,8 @@ const temporaryFile    = `${ process.cwd() }/temp.nim`
 const temporaryFile2   = `${ process.cwd() }/dumper.nim`
 const temporaryFileAsm = `${ process.cwd() }/@mtemp.nim.c`
 const temporaryOutFile = temporaryFile.replace(".nim", "")
-const preparedFlags    = ` --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile}`
-const extraFlags       = " -d:useMalloc -d:nimArcDebug -d:nimArcIds -d:nimDebugDlOpen -d:stacktraceMsgs -d:nimCompilerStacktraceHints -d:ssl -d:nimDisableCertificateValidation --debugger:native --forceBuild:on --debuginfo:on --colors:off --verbosity:0 --hints:off --warnings:off --lineTrace:off "
-const nimFinalVersions = ["devel", "stable", "1.6.0", "1.4.0", "1.2.0", "1.0.0", "0.20.2"]
+const extraFlags       = ` -d:nimDebugDlOpen -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --verbosity:0 --hints:off --warnings:off --styleCheck:off --lineTrace:off --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile}`
+const nimFinalVersions = ["devel", "stable", "2.0.0", "1.6.0", "1.4.0", "1.2.0", "1.0.0", "0.20.2"]
 const choosenimNoAnal  = {env: {...process.env, CHOOSENIM_NO_ANALYTICS: "1", SOURCE_DATE_EPOCH: Math.floor(Date.now() / 1000).toString()}}  // SOURCE_DATE_EPOCH is same in all runs.
 const valgrindLeakChck = {env: {...process.env, VALGRIND_OPTS: "--tool=memcheck --leak-check=full --show-leak-kinds=all --undef-value-errors=yes --track-origins=yes --show-error-list=yes --keep-debuginfo=yes --show-emwarns=yes --demangle=yes --smc-check=none --num-callers=9 --max-threads=9"}}
 const debugGodModes    = ["araq"]
@@ -25,7 +24,7 @@ const unlockedAllowAll = true  // true == Users can Bisect  |  false == Only Adm
 const commentPrefix = "!nim "
 
 
-const cfg = (key) => {
+function cfg(key) {
   console.assert(typeof key === "string", `key must be string, but got ${ typeof key }`)
   const result = core.getInput(key, {required: true}).trim()
   console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
@@ -33,7 +32,7 @@ const cfg = (key) => {
 };
 
 
-const indentString = (str, count = 2, indent = ' ') => {
+function indentString(str, count = 2, indent = ' ') {
   return str.replace(/^/gm, indent.repeat(count))
 }
 
@@ -87,17 +86,29 @@ function checkAuthorAssociation() {
 };
 
 
-async function checkCollaboratorPermissionLevel(githubClient, levels) {
-  const permissionRes = await githubClient.repos.getCollaboratorPermissionLevel({
-    owner   : context.repo.owner,
-    repo    : context.repo.repo,
-    username: context.actor,
-  })
-  if ( permissionRes.status !== 200 ) {
-    return false
-  }
-  return (levels.includes(permissionRes.data.permission) || debugGodModes.includes(context.payload.comment.user.login.toLowerCase()))
-};
+function hasArc(cmd) {
+  console.assert(typeof cmd === "string", `cmd must be string, but got ${ typeof cmd }`)
+  const s = cmd.trim().toLowerCase()
+  return (s.includes("--gc:arc") || s.includes("--gc:orc") || s.includes("--gc:atomicarc") || s.includes("--mm:arc") || s.includes("--mm:orc") || s.includes("--mm:atomicarc"))
+}
+
+
+function hasMalloc(cmd) {
+  console.assert(typeof cmd === "string", `cmd must be string, but got ${ typeof cmd }`)
+  const s = cmd.trim().toLowerCase()
+  return (s.includes("-d:usemalloc") || s.includes("--define:usemalloc"))
+}
+
+
+function versionInfos() {
+  return [
+    execSync("gcc --version").toString().split("\n")[0].replace("gcc", "").trim(),
+    execSync("ldd --version").toString().split("\n")[0].replace("ldd", "").trim(),
+    execSync("valgrind --version").toString().split("\n")[0].replace("valgrind-", "").trim(),
+    execSync("node --version").toString().split("\n")[0].replace("v", "").trim(),
+    execSync("uname --kernel-release").toString().split("\n")[0].replace("azure", "").trim(),
+  ]
+}
 
 
 async function addReaction(githubClient, reaction) {
@@ -125,32 +136,15 @@ async function addIssueComment(githubClient, issueCommentBody) {
 function parseGithubComment(comment) {
   console.assert(typeof comment === "string", `comment must be string, but got ${ typeof comment }`)
   const tokens = marked.Lexer.lex(comment)
+  const allowedFileExtensions = ["c", "cpp", "c++", "h", "hpp", "js"]
   let result = ""
   for (const token of tokens) {
     if (token.type === 'code' && token.text.length > 0 && token.lang !== undefined) {
       if (token.lang === 'nim') {
         result = token.text.trim()
         result = result.split('\n').filter(line => line.trim() !== '').join('\n')
-      } else if (token.lang === 'c') {
-        const xtraFile = `${ process.cwd() }/temp.c`
-        if (!fs.existsSync(xtraFile)) {
-          fs.writeFileSync(xtraFile, token.text.trim())
-          fs.chmodSync(xtraFile, "444")
-        }
-      } else if (token.lang === 'cpp' || token.lang === 'c++') {
-        const xtraFile = `${ process.cwd() }/temp.cpp`
-        if (!fs.existsSync(xtraFile)) {
-          fs.writeFileSync(xtraFile, token.text.trim())
-          fs.chmodSync(xtraFile, "444")
-        }
-      } else if (token.lang === 'h' || token.lang === 'hpp') {
-        const xtraFile = `${ process.cwd() }/temp.h`
-        if (!fs.existsSync(xtraFile)) {
-          fs.writeFileSync(xtraFile, token.text.trim())
-          fs.chmodSync(xtraFile, "444")
-        }
-      } else if (token.lang === 'js' || token.lang === 'javascript') {
-        const xtraFile = `${ process.cwd() }/temp.js`
+      } else if (allowedFileExtensions.includes(token.lang)) {
+        const xtraFile = `${ process.cwd() }/temp.${token.lang}`
         if (!fs.existsSync(xtraFile)) {
           fs.writeFileSync(xtraFile, token.text.trim())
           fs.chmodSync(xtraFile, "444")
@@ -171,29 +165,33 @@ function parseGithubComment(comment) {
 function parseGithubCommand(comment) {
   console.assert(typeof comment === "string", `comment must be string, but got ${ typeof comment }`)
   let result = comment.trim().split("\n")[0].trim()
+  // Basic checkings
   const bannedSeps = [";", "&&", "||"]
   if (bannedSeps.some(s => result.includes(s))) {
     core.setFailed(`Github comment must not contain ${bannedSeps}`)
   }
-  if (result.startsWith("!nim c") || result.startsWith("!nim cpp") || result.startsWith("!nim js")) {
-    if (result.startsWith("!nim js")) {
-      result = result + " -d:nodejs -d:nimExperimentalAsyncjsThen --run "
-    } else if (result.includes("--gc:arc") || result.includes("--gc:orc") || result.includes("--gc:atomicArc")) {
-      // If ARC or ORC then add " -d:nimAllocPagesViaMalloc " for Valgrind.
-      // "--expandArc:main" can not be used because it was added last.
-      result = result + " -d:nimAllocPagesViaMalloc "
-    }
-    result = result + extraFlags + preparedFlags
-    if (result.startsWith("!nim c") || result.startsWith("!nim cpp")) {
-      // If Valgrind is installed, then use Valgrind, else just run it.
-      result = result + ` && valgrind ${temporaryOutFile}`
-    }
-    result = result.substring(1) // Remove the leading "!"
-    console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
-    return result.trim()
-  } else {
+  if (!result.startsWith("!nim c") && !result.startsWith("!nim cpp") && !result.startsWith("!nim js")) {
     core.setFailed("Github comment must start with '!nim c' or '!nim cpp' or '!nim js'")
   }
+  // Extra arguments based on different targets
+  if (result.startsWith("!nim js")) {
+    result = result + " -d:nodejs -d:nimExperimentalAsyncjsThen -d:nimExperimentalJsfetch "
+  }
+  if (hasArc(result)) {
+    result = result + " -d:nimArcDebug -d:nimArcIds "
+  }
+  if (hasMalloc(result)) {
+    result = result + " -d:nimAllocPagesViaMalloc -d:useSysAssert -d:useGcAssert -d:nimLeakDetector --debugger:native --debuginfo:on "
+  } else {
+    result = result + " --run "
+  }
+  result = result + extraFlags
+  if (hasMalloc(result)) {
+    result = result + ` && valgrind ${temporaryOutFile}`
+  }
+  result = result.substring(1) // Remove the leading "!"
+  console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
+  return result.trim()
 };
 
 
@@ -261,7 +259,7 @@ function getIR() {
   }
   // Clean outs
   result = result.split('\n').filter(line => line.trim() !== '').join('\n') // Remove empty lines
-  result = result.replace(/\/\*[\s\S]*?\*\//g, '')                          // Remove comments
+  result = result.replace(/\/\*[\s\S]*?\*\//g, '').trim()                   // Remove comments
   console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
   return result
 }
@@ -339,44 +337,41 @@ function gitCommitForVersion(semver) {
 if (context.eventName === "issue_comment" && context.payload.comment.body.trim().toLowerCase().startsWith(commentPrefix) && (unlockedAllowAll || checkAuthorAssociation()) ) {
   // Check if we have permissions.
   const githubClient  = new GitHub(cfg('github-token'))
-  if (unlockedAllowAll || checkCollaboratorPermissionLevel(githubClient, ['admin', 'write'])) {
-      // Add Reaction of "Eyes" as seen.
-      if (addReaction(githubClient, "eyes")) {
-        const githubComment = context.payload.comment.body.trim()
-        const codes         = parseGithubComment(githubComment)
-        const cmd           = parseGithubCommand(githubComment)
-        let fails           = "devel"
-        let works           = null
-        let commitsLen      = nimFinalVersions.length
-        let issueCommentStr = `@${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })`
-        // Check the same code agaisnt all versions of Nim from devel to 1.0
-        for (let semver of nimFinalVersions) {
-          console.log(executeChoosenim(semver))
-          const started  = new Date()
-          const [isOk, output] = executeNim(cmd, codes)
-          const finished = new Date()
-          const thumbsUp = (isOk ? "\t:+1: OK" : "\t:-1: FAIL")
-          // Remember which version works and which version breaks.
-          if (isOk && works === null) {
-            works = semver
-          }
-          else if (!isOk && fails === "devel") {
-            fails = semver
-          }
-          // Append to reports.
-          issueCommentStr += `<details><summary>${semver}\t${thumbsUp}</summary><h3>Output</h3>\n
+  // Add Reaction of "Eyes" as seen.
+  if (addReaction(githubClient, "eyes")) {
+    const githubComment = context.payload.comment.body.trim()
+    const codes         = parseGithubComment(githubComment)
+    const cmd           = parseGithubCommand(githubComment)
+    let fails           = "devel"
+    let works           = null
+    let commitsLen      = nimFinalVersions.length
+    let issueCommentStr = `@${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })`
+    // Check the same code agaisnt all versions of Nim from devel to 1.0
+    for (let semver of nimFinalVersions) {
+      console.log(executeChoosenim(semver))
+      const started  = new Date()
+      let [isOk, output] = executeNim(cmd, codes)
+      const finished = new Date()
+      const thumbsUp = (isOk ? " :+1: $\\color{green}\\textbf{\\large OK}$ " : " :-1: FAIL ")
+      // Remember which version works and which version breaks.
+      if (isOk && works === null) {
+        works = semver
+      }
+      else if (!isOk && fails === "devel") {
+        fails = semver
+      }
+      // Append to reports.
+      issueCommentStr += `<details><summary><kbd>${semver}</kbd>\t${thumbsUp}</summary><h3>Output</h3>\n
 ${ tripleBackticks }
-${output}
+${ output.replace(/^==\d+== /gm, '').trim() }
 ${ tripleBackticks }\n
 <h3>Stats</h3><ul>
-<li><b>Created</b>\t<code>${ context.payload.comment.created_at }</code>
 <li><b>Started</b>\t<code>${ started.toISOString().split('.').shift()  }</code>
 <li><b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code>
-<li><b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000)) }</code>
-<li><b>Commands</b>\t<code>${ cmd }</code></ul>\n`
-          // Iff NOT Ok add AST and IR info for debugging purposes.
-          if (!isOk) {
-            issueCommentStr += `
+<li><b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000)) }</code></ul>\n`
+      // Iff NOT Ok add AST and IR info for debugging purposes.
+      if (!isOk) {
+        issueCommentStr += `
 <h3>IR</h3><b>Compiled filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>\n
 ${ tripleBackticks }cpp
 ${ getIR() }
@@ -385,57 +380,56 @@ ${ tripleBackticks }\n
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }\n`
+      }
+      issueCommentStr += "</details>\n"
+    }
+
+
+    // This part is about finding the specific commit that breaks
+    if (works !== null) {
+      // Get a range of commits between "FAILS..WORKS"
+      gitInit()
+      const failsCommit = gitCommitForVersion(fails)
+      const worksCommit = gitCommitForVersion(works)
+      if (failsCommit !== null && worksCommit !== null) {
+        let commits = gitCommitsBetween(worksCommit, failsCommit)
+        commitsLen += commits.length
+        // Split commits in half and check if that commit works or fails,
+        // then repeat the split there until we got less than 10 commits.
+        while (commits.length > 10) {
+          let midIndex = Math.ceil(commits.length / 2)
+          console.log(executeChoosenim(commits[midIndex]))
+          let [isOk, output] = executeNim(cmd, codes)
+          if (isOk) {
+            // iff its OK then split 0..mid
+            commits = commits.slice(0, midIndex);
+          } else {
+            // else NOT OK then split mid..end
+            commits = commits.slice(midIndex);
           }
-          issueCommentStr += "</details>\n"
         }
-
-
-        // This part is about finding the specific commit that breaks
-        if (works !== null) {
-          // Get a range of commits between "FAILS..WORKS"
-          gitInit()
-          const failsCommit = gitCommitForVersion(fails)
-          const worksCommit = gitCommitForVersion(works)
-          if (failsCommit !== null && worksCommit !== null) {
-            let commits = gitCommitsBetween(worksCommit, failsCommit)
-            commitsLen += commits.length
-            // Split commits in half and check if that commit works or fails,
-            // then repeat the split there until we got less than 10 commits.
-            while (commits.length > 10) {
-              let midIndex = Math.ceil(commits.length / 2)
-              console.log(executeChoosenim(commits[midIndex]))
-              let [isOk, output] = executeNim(cmd, codes)
-              if (isOk) {
-                // iff its OK then split 0..mid
-                commits = commits.slice(0, midIndex);
-              } else {
-                // else NOT OK then split mid..end
-                commits = commits.slice(midIndex);
-              }
+        let commitsNear = "\n<ul>"
+        for (let commit of commits) {
+          commitsNear += `<li><a href=https://github.com/nim-lang/Nim/commit/${ commit.replace("#", "") } >${ commit }</a>\n`
+        }
+        commitsNear += "</ul>\n"
+        let bugFound = false
+        let index = 0
+        for (let commit of commits) {
+          // Choosenim switch semver
+          console.log(executeChoosenim(commit))
+          // Run code
+          const [isOk, output] = executeNim(cmd, codes)
+          // if this commit works, then previous commit is the breakingCommit
+          if (isOk) {
+            if (!bugFound) {
+              bugFound = true
             }
-            let commitsNear = "\n<ul>"
-            for (let commit of commits) {
-              commitsNear += `<li><a href=https://github.com/nim-lang/Nim/commit/${ commit.replace("#", "") } >${ commit }</a>\n`
-            }
-            commitsNear += "</ul>\n"
-            let bugFound = false
-            let index = 0
-            for (let commit of commits) {
-              // Choosenim switch semver
-              console.log(executeChoosenim(commit))
-              // Run code
-              const [isOk, output] = executeNim(cmd, codes)
-              // if this commit works, then previous commit is the breakingCommit
-              if (isOk) {
-                if (!bugFound) {
-                  bugFound = true
-                }
-                const breakingCommit = (index > 0) ? commits[index - 1] : commits[index]
-                const [user, mesage, date, files] = gitMetadata(breakingCommit)
-                const comit = breakingCommit.replace('"', '')
-
-                // Report the breaking commit diagnostics
-                issueCommentStr += `<details><summary>${comit} :arrow_right: :bug:</summary><h3>Diagnostics</h3>\n
+            const breakingCommit = (index > 0) ? commits[index - 1] : commits[index]
+            const [user, mesage, date, files] = gitMetadata(breakingCommit)
+            const comit = breakingCommit.replace('"', '')
+            // Report the breaking commit diagnostics
+            issueCommentStr += `<details><summary><kbd>${comit}</kbd> :arrow_right: :bug:</summary><h3>Diagnostics</h3>\n
 ${user} introduced a bug at <code>${date}</code> on commit <a href=https://github.com/nim-lang/Nim/commit/${ comit.replace("#", "") } >${ comit }</a> with message:\n
 ${ tripleBackticks }
 ${mesage}
@@ -446,28 +440,36 @@ ${files}
 ${ tripleBackticks }
 \nThe bug can be in the commits:\n
 ${commitsNear}
-(Diagnostics sometimes off-by-one).\n</details>\n`
-                // Break out of the for
-                break
-              }
-              index++
-            }
-            if (!bugFound) {
-              issueCommentStr += `<details><summary>??? :arrow_right: :bug:</summary><h3>Diagnostics</h3>\n
+(Diagnostics sometimes off-by-one).</details>\n`
+            // Break out of the for
+            break
+          }
+          index++
+        }
+        if (!bugFound) {
+          issueCommentStr += `<details><summary>??? :arrow_right: :bug:</summary><h3>Diagnostics</h3>\n
 The commit that introduced the bug can not be found, but the bug is in the commits:
 ${commitsNear}
 (Can not find the commit because Nim can not be re-built commit-by-commit to bisect).\n</details>\n`
-            }
-          }
-          else { console.warn("failsCommit and worksCommit not found, at least 1 working commit and 1 non-working commit are required for Bisect commit-by-commit.") }
         }
-        else { console.warn("works and fails not found, at least 1 working commit and 1 non-working commit are required for Bisect commit-by-commit.") }
-        // Report results back as a comment on the issue.
-        const duration = ((( (new Date()) - startedDatetime) % 60000) / 1000)
-        issueCommentStr += `:robot: Bug found in <code>${ formatDuration(duration) }</code> bisecting <code>${commitsLen}</code> commits at <code>${ Math.round(commitsLen / duration) }</code> commits per second.`
-        addIssueComment(githubClient, issueCommentStr)
+      }
+      else { console.warn("failsCommit and worksCommit not found, at least 1 working commit and 1 non-working commit are required for Bisect commit-by-commit.") }
     }
-    else { console.warn("githubClient.addReaction failed, repo permissions error?.") }
+    else { console.warn("works and fails not found, at least 1 working commit and 1 non-working commit are required for Bisect commit-by-commit.") }
+    // Report results back as a comment on the issue.
+    const duration = ((( (new Date()) - startedDatetime) % 60000) / 1000)
+    const v = versionInfos()
+    issueCommentStr += `<details><summary>Stats</summary><ul>
+<li><b>GCC     </b>\t<code>${ v[0] }</code>
+<li><b>LibC    </b>\t<code>${ v[1] }</code>
+<li><b>Valgrind</b>\t<code>${ v[2] }</code>
+<li><b>NodeJS  </b>\t<code>${ v[3] }</code>
+<li><b>Linux   </b>\t<code>${ v[4] }</code>
+<li><b>Created </b>\t<code>${ context.payload.comment.created_at }</code>
+<li><b>Issue Comments</b>\t<code>${ context.payload.issue.comments }</code>
+<li><b>Commands</b>\t<code>${ cmd }</code></ul></details>\n
+:robot: Bug found in <code>${ formatDuration(duration) }</code> bisecting <code>${commitsLen}</code> commits at <code>${ Math.round(commitsLen / duration) }</code> commits per second.`
+    addIssueComment(githubClient, issueCommentStr)
   }
-  else { console.log("githubClient.checkCollaboratorPermissionLevel failed, user permissions error?.") }
+  else { console.warn("githubClient.addReaction failed, repo permissions error?.") }
 }
