@@ -177,16 +177,18 @@ function parseGithubCommand(comment) {
   if (result.startsWith("!nim js")) {
     result = result + " -d:nodejs -d:nimExperimentalAsyncjsThen -d:nimExperimentalJsfetch "
   }
-  if (hasArc(result)) {
+  const useArc      = hasArc(result)
+  const useValgrind = useArc && hasMalloc(result)
+  if (useArc) {
     result = result + " -d:nimArcDebug -d:nimArcIds "
   }
-  if (hasMalloc(result)) {
+  if (useValgrind) {
     result = result + " -d:nimAllocPagesViaMalloc -d:useSysAssert -d:useGcAssert -d:nimLeakDetector --debugger:native --debuginfo:on "
   } else {
     result = result + " --run "
   }
   result = result + extraFlags
-  if (hasMalloc(result)) {
+  if (useValgrind) {
     result = result + ` && valgrind ${temporaryOutFile}`
   }
   result = result.substring(1) // Remove the leading "!"
