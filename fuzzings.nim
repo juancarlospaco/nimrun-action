@@ -24,7 +24,7 @@ macro fuzzing*(tipe: typedesc): untyped =
   of "BackwardsIndex": result = nnkCall.newTree(newIdentNode"BackwardsIndex", newLit(int(r.rand(int.high))))
   of "string", "cstring":
     var s = ""
-    for _ in 0 .. r.rand(80): s.add(r.sample({'\x00'..'\xFF'} - {'"'}))
+    for _ in 0 .. r.rand(int8.high): s.add(r.sample({'\x00'..'\xFF'} - {'"', '`', '\''}))
     if tipe.strVal == "string":
       result = newStrLitNode(s)
     else:
