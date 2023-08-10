@@ -84,7 +84,7 @@ Used by Nim official repo:
 
 # Fuzzing
 
-- Static [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing) for primitive types.
+- Static [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing) for primitive types for C/C++/JS targets.
 
 Example:
 
