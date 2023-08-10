@@ -75,6 +75,46 @@ Used by Nim official repo:
 - https://github.com/nim-lang/Nim/pull/22157#issuecomment-1620858856
 
 
+# Valgrind
+
+- Iff using ARC/ORC/AtomicARC and `-d:useMalloc` then uses Valgrind.
+- Example `!nim c --gc:arc -d:useMalloc` (automatically sets `--debugger:native` etc).
+- https://github.com/juancarlospaco/nimrun-action/pull/4
+
+
+# Fuzzing
+
+- Static [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing) for primitive types.
+
+Example:
+
+```nim
+random.randomize()
+type O = enum A, B
+echo O.fuzzing
+echo int.fuzzing
+echo int64.fuzzing
+echo int32.fuzzing
+echo int16.fuzzing
+echo int8.fuzzing
+echo uint64.fuzzing
+echo uint32.fuzzing
+echo uint16.fuzzing
+echo uint8.fuzzing
+echo byte.fuzzing
+echo char.fuzzing
+echo repr(BackwardsIndex.fuzzing)
+echo bool.fuzzing
+echo float.fuzzing
+echo float64.fuzzing
+echo float32.fuzzing
+echo Positive.fuzzing
+echo Natural.fuzzing
+echo string.fuzzing
+echo cstring.fuzzing
+```
+
+
 # Requisites
 
 - `jiro4989/setup-nim-action` to setup Nim.
