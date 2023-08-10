@@ -86,7 +86,9 @@ Used by Nim official repo:
 
 - Static [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing) for primitive types for C/C++/JS targets.
 
-Example:
+Examples:
+
+- https://github.com/juancarlospaco/nimrun-action/issues/3#issuecomment-1673682776
 
 ```nim
 random.randomize()
