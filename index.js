@@ -22,6 +22,7 @@ const valgrindLeakChck = {env: {...process.env, VALGRIND_OPTS: "--tool=memcheck 
 const debugGodModes    = ["araq"]
 const unlockedAllowAll = true  // true == Users can Bisect  |  false == Only Admins can Bisect.
 const commentPrefix    = "!nim "
+let   nimFileCounter   = 0
 
 
 function cfg(key) {
@@ -151,8 +152,17 @@ function parseGithubComment(comment) {
   for (const token of tokens) {
     if (token.type === 'code' && token.text.length > 0 && token.lang !== undefined) {
       if (token.lang === 'nim') {
-        result = token.text.trim()
-        result = result.split('\n').filter(line => line.trim() !== '').join('\n')
+        if (nimFileCounter > 0) {
+          const xtraFile = temporaryFile.replace(".nim", `${ nimFileCounter }.nim`)
+          if (!fs.existsSync(xtraFile)) {
+            fs.writeFileSync(xtraFile, token.text.trim())
+            fs.chmodSync(xtraFile, "444")
+          }
+        } else {
+          nimFileCounter += 1
+          result = token.text.trim()
+          result = result.split('\n').filter(line => line.trim() !== '').join('\n')
+        }
       } else if (allowedFileExtensions.includes(token.lang)) {
         const xtraFile = `${ process.cwd() }/temp.${token.lang}`
         if (!fs.existsSync(xtraFile)) {
