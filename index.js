@@ -1,10 +1,10 @@
 'use strict';
-const fs       = require('fs')
-const os       = require('os')
-const path     = require('path')
-const core     = require('@actions/core')
+const fs       = require('fs');
+const os       = require('os');
+const path     = require('path');
+const core     = require('@actions/core');
 const marked   = require('marked')
-const { execSync } = require('child_process')
+const { execSync } = require('child_process');
 const {context, GitHub} = require('@actions/github')
 
 
@@ -21,7 +21,8 @@ const choosenimNoAnal  = {env: {...process.env, CHOOSENIM_NO_ANALYTICS: "1", SOU
 const valgrindLeakChck = {env: {...process.env, VALGRIND_OPTS: "--tool=memcheck --leak-check=full --show-leak-kinds=all --undef-value-errors=yes --track-origins=yes --show-error-list=yes --keep-debuginfo=yes --show-emwarns=yes --demangle=yes --smc-check=none --num-callers=9 --max-threads=9"}}
 const debugGodModes    = ["araq"]
 const unlockedAllowAll = true  // true == Users can Bisect  |  false == Only Admins can Bisect.
-const commentPrefix    = "!nim "
+const commentPrefix  = "!nim "
+let   nimFileCounter = 0
 
 
 function cfg(key) {
@@ -100,23 +101,13 @@ function hasMalloc(cmd) {
 }
 
 
-function semverParser(str) {
-  let result = "0.0.0"
-  const match = str.split("\n")[0].match(/\b(\d+\.\d+(\.\d+)?)\b/)
-  if (match) {
-    result = match[1]
-  }
-  return result
-}
-
-
 function versionInfos() {
   return [
-    semverParser(execSync("gcc --version").toString()),
-    semverParser(execSync("ldd --version").toString()),
-    semverParser(execSync("valgrind --version").toString()),
-    semverParser(execSync("node --version").toString()),
-    semverParser(execSync("uname --kernel-release").toString()),
+    execSync("gcc --version").toString().split("\n")[0].replace("gcc", "").trim(),
+    execSync("ldd --version").toString().split("\n")[0].replace("ldd", "").trim(),
+    execSync("valgrind --version").toString().split("\n")[0].replace("valgrind-", "").trim(),
+    execSync("node --version").toString().split("\n")[0].replace("v", "").trim(),
+    execSync("uname --kernel-release").toString().split("\n")[0].replace("azure", "").trim(),
   ]
 }
 
@@ -146,13 +137,22 @@ async function addIssueComment(githubClient, issueCommentBody) {
 function parseGithubComment(comment) {
   console.assert(typeof comment === "string", `comment must be string, but got ${ typeof comment }`)
   const tokens = marked.Lexer.lex(comment)
-  const allowedFileExtensions = ["c", "cpp", "c++", "h", "hpp", "js", "json", "txt"]
+  const allowedFileExtensions = ["c", "cpp", "c++", "h", "hpp", "js"]
   let result = ""
   for (const token of tokens) {
     if (token.type === 'code' && token.text.length > 0 && token.lang !== undefined) {
       if (token.lang === 'nim') {
-        result = token.text.trim()
-        result = result.split('\n').filter(line => line.trim() !== '').join('\n')
+        if (nimFileCounter > 0) {
+          const xtraFile = temporaryFile.replace(".nim", `${ nimFileCounter }.nim`)
+          if (!fs.existsSync(xtraFile)) {
+            fs.writeFileSync(xtraFile, token.text.trim())
+            fs.chmodSync(xtraFile, "444")
+          }
+        } else {
+          nimFileCounter += 1
+          result = token.text.trim()
+          result = result.split('\n').filter(line => line.trim() !== '').join('\n')
+        }
       } else if (allowedFileExtensions.includes(token.lang)) {
         const xtraFile = `${ process.cwd() }/temp.${token.lang}`
         if (!fs.existsSync(xtraFile)) {
@@ -175,63 +175,53 @@ function parseGithubComment(comment) {
 function parseGithubCommand(comment) {
   console.assert(typeof comment === "string", `comment must be string, but got ${ typeof comment }`)
   let result = comment.trim().split("\n")[0].trim()
-  if (typeof result === "string" && result.length > 0) {
-    // Basic checkings
-    const bannedSeps = [";", ";;", "&&", "||"]
-    if (bannedSeps.some(s => result.includes(s))) {
-      core.setFailed(`Github comment must not contain ${bannedSeps}`)
-    }
-    if (!result.startsWith("!nim c") && !result.startsWith("!nim cpp") && !result.startsWith("!nim js")) {
-      core.setFailed("Github comment must start with '!nim c' or '!nim cpp' or '!nim js'")
-    }
-    // Extra arguments based on different targets
-    if (result.startsWith("!nim js")) {
-      result = result + " -d:nodejs -d:nimExperimentalAsyncjsThen -d:nimExperimentalJsfetch "
-    }
-    const useArc      = hasArc(result)
-    const useValgrind = useArc && hasMalloc(result)
-    if (useArc) {
-      result = result + " -d:nimArcDebug -d:nimArcIds "
-    }
-    if (useValgrind) {
-      result = result + " -d:nimAllocPagesViaMalloc -d:useSysAssert -d:useGcAssert -d:nimLeakDetector --debugger:native --debuginfo:on "
-    } else {
-      result = result + " --run "
-    }
-    result = result + extraFlags
-    if (useValgrind) {
-      result = result + ` && valgrind ${temporaryOutFile}`
-    }
-    result = result.substring(1) // Remove the leading "!"
-    console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
-    return result.trim()
-  } else {
-    console.warn('Failed to parse github command')
-    return ""
+  // Basic checkings
+  const bannedSeps = [";", "&&", "||"]
+  if (bannedSeps.some(s => result.includes(s))) {
+    core.setFailed(`Github comment must not contain ${bannedSeps}`)
   }
+  if (!result.startsWith("!nim c") && !result.startsWith("!nim cpp") && !result.startsWith("!nim js")) {
+    core.setFailed("Github comment must start with '!nim c' or '!nim cpp' or '!nim js'")
+  }
+  // Extra arguments based on different targets
+  if (result.startsWith("!nim js")) {
+    result = result + " -d:nodejs -d:nimExperimentalAsyncjsThen -d:nimExperimentalJsfetch "
+  }
+  const useArc      = hasArc(result)
+  const useValgrind = useArc && hasMalloc(result)
+  if (useArc) {
+    result = result + " -d:nimArcDebug -d:nimArcIds "
+  }
+  if (useValgrind) {
+    result = result + " -d:nimAllocPagesViaMalloc -d:useSysAssert -d:useGcAssert -d:nimLeakDetector --debugger:native --debuginfo:on "
+  } else {
+    result = result + " --run "
+  }
+  result = result + extraFlags
+  if (useValgrind) {
+    result = result + ` && valgrind ${temporaryOutFile}`
+  }
+  result = result.substring(1) // Remove the leading "!"
+  console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
+  return result.trim()
 };
 
 
 function executeChoosenim(semver) {
   console.assert(typeof semver === "string", `semver must be string, but got ${ typeof semver }`)
-  if (typeof semver === "string" && semver.length > 0) {
-    for (let i = 0; i < 3; i++) {
-      try {
-        const result = execSync(`choosenim --noColor --skipClean --yes update "${semver}"`, choosenimNoAnal).toString().trim()
-        if (result) {
-          return result
-        }
-      } catch (error) {
-        console.warn(error)
-        if (i === 2) {
-          console.warn('choosenim failed >3 times, giving up...')
-          return ""
-        }
+  for (let i = 0; i < 3; i++) {
+    try {
+      const result = execSync(`choosenim --noColor --skipClean --yes update "${semver}"`, choosenimNoAnal).toString().trim()
+      if (result) {
+        return result
+      }
+    } catch (error) {
+      console.warn(error)
+      if (i === 2) {
+        console.warn('choosenim failed >3 times, giving up...')
+        return ""
       }
     }
-  } else {
-    console.warn('choosenim received an empty string semver')
-    return ""
   }
 }
 
@@ -239,37 +229,27 @@ function executeChoosenim(semver) {
 function executeNim(cmd, codes) {
   console.assert(typeof cmd === "string", `cmd must be string, but got ${ typeof cmd }`)
   console.assert(typeof codes === "string", `codes must be string, but got ${ typeof codes }`)
-  if (typeof cmd === "string" && cmd.length > 0 && typeof codes === "string" && codes.length > 0) {
-    if (!fs.existsSync(temporaryFile)) {
-      fs.writeFileSync(temporaryFile, codes)
-      fs.chmodSync(temporaryFile, "444")
-    }
-    console.log("COMMAND:\t", cmd)
-    try {
-      return [true, execSync(cmd, valgrindLeakChck).toString().trim()]
-    } catch (error) {
-      console.warn(error)
-      return [false, `${error}`]
-    }
-  } else {
-    console.warn('executeNim received an empty string code')
-    return [false, ""]
+  if (!fs.existsSync(temporaryFile)) {
+    fs.writeFileSync(temporaryFile, codes)
+    fs.chmodSync(temporaryFile, "444")
+  }
+  console.log("COMMAND:\t", cmd)
+  try {
+    return [true, execSync(cmd, valgrindLeakChck).toString().trim()]
+  } catch (error) {
+    console.warn(error)
+    return [false, `${error}`]
   }
 }
 
 
 function executeAstGen(codes) {
   console.assert(typeof codes === "string", `codes must be string, but got ${ typeof codes }`)
-  if (typeof codes === "string" && codes.length > 0) {
-    fs.writeFileSync(temporaryFile2, `dumpAstGen:\n${ indentString(codes) }`)
-    try {
-      return execSync(`nim check --verbosity:0 --hints:off --warnings:off --colors:off --lineTrace:off --forceBuild:on --import:std/macros ${temporaryFile2}`).toString().trim()
-    } catch (error) {
-      console.warn(error)
-      return ""
-    }
-  } else {
-    console.warn('executeAstGen received an empty string code')
+  fs.writeFileSync(temporaryFile2, `dumpAstGen:\n${ indentString(codes) }`)
+  try {
+    return execSync(`nim check --verbosity:0 --hints:off --warnings:off --colors:off --lineTrace:off --forceBuild:on --import:std/macros ${temporaryFile2}`).toString().trim()
+  } catch (error) {
+    console.warn(error)
     return ""
   }
 }
@@ -309,17 +289,12 @@ function gitInit() {
 function gitMetadata(commit) {
   // Git get useful metadata from current commit
   console.assert(typeof commit === "string", `commit must be string, but got ${ typeof commit }`)
-  if (typeof commit === "string" && commit.length > 0) {
-    console.log(execSync(`git checkout ${ commit.replace("#", "") }`, {cwd: gitTempPath}).toString())
-    const user   = execSync("git log -1 --pretty=format:'%an'", {cwd: gitTempPath}).toString().trim().toLowerCase()
-    const mesage = execSync("git log -1 --pretty='%B'", {cwd: gitTempPath}).toString().trim()
-    const date   = execSync("git log -1 --pretty=format:'%ai'", {cwd: gitTempPath}).toString().trim().toLowerCase()
-    const files  = execSync("git diff-tree --no-commit-id --name-only -r HEAD", {cwd: gitTempPath}).toString().trim()
-    return [user, mesage, date, files]
-  } else {
-    console.warn('gitMetadata received an empty string commit')
-    return ["", "", "", ""]
-  }
+  console.log(execSync(`git checkout ${ commit.replace("#", "") }`, {cwd: gitTempPath}).toString())
+  const user   = execSync("git log -1 --pretty=format:'%an'", {cwd: gitTempPath}).toString().trim().toLowerCase()
+  const mesage = execSync("git log -1 --pretty='%B'", {cwd: gitTempPath}).toString().trim()
+  const date   = execSync("git log -1 --pretty=format:'%ai'", {cwd: gitTempPath}).toString().trim().toLowerCase()
+  const files  = execSync("git diff-tree --no-commit-id --name-only -r HEAD", {cwd: gitTempPath}).toString().trim()
+  return [user, mesage, date, files]
 }
 
 
@@ -327,15 +302,9 @@ function gitCommitsBetween(commitOld, commitNew) {
   // Git get all commit short hash between commitOld and commitNew
   console.assert(typeof commitOld === "string", `commitOld must be string, but got ${ typeof commitOld }`)
   console.assert(typeof commitNew === "string", `commitNew must be string, but got ${ typeof commitNew }`)
-  if (typeof commitOld === "string" && commitOld.length > 0 && typeof commitNew === "string" && commitNew.length > 0) {
-    let result = execSync(`git log --pretty=format:'#%h' ${commitOld}..${commitNew}`, {cwd: gitTempPath}).toString().trim().toLowerCase()
-    console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
-    result = result.split('\n').filter(line => line.trim() !== '')
-    return result
-  } else {
-    console.warn('gitCommitsBetween received an empty string commit')
-    return []
-  }
+  const result = execSync(`git log --pretty=format:'#%h' ${commitOld}..${commitNew}`, {cwd: gitTempPath}).toString().trim().toLowerCase()
+  console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
+  return result.split('\n')
 }
 
 
@@ -343,45 +312,40 @@ function gitCommitForVersion(semver) {
   // Get Git commit for an specific Nim semver
   console.assert(typeof semver === "string", `semver must be string, but got ${ typeof semver }`)
   let result = null
-  if (typeof semver === "string" && semver.length > 0) {
-    semver     = semver.trim().toLowerCase()
-    if (semver === "2.0.0") {
-      result = "a488067"
-    } else if (semver === "1.6.0") {
-      result = "727c637"
-    } else if (semver === "1.4.0") {
-      result = "018ae96"
-    } else if (semver === "1.2.0") {
-      result = "7e83adf"
-    } else if (semver === "1.0.0") {
-      result = "f7a8fc4"
-    } else if (semver === "0.20.2") {
-      result = "88a0edb"
-    } else if (semver === "devel" || semver === "stable") {
-      // For semver === "devel" or semver === "stable" we use choosenim
-      executeChoosenim(semver) // devel and stable are moving targets.
-      const nimversion = execSync("nim --version").toString().trim().toLowerCase().split('\n').filter(line => (typeof line === "string" && line.trim() !== ''))
-      for (const s of nimversion) {
-        if (s.startsWith("git hash:")) {
-          result = s.replace("git hash:", "").trim().toLowerCase()
-          break
-        }
+  semver     = semver.trim().toLowerCase()
+  if (semver === "2.0.0") {
+    result = "a488067"
+  } else if (semver === "1.6.0") {
+    result = "727c637"
+  } else if (semver === "1.4.0") {
+    result = "018ae96"
+  } else if (semver === "1.2.0") {
+    result = "7e83adf"
+  } else if (semver === "1.0.0") {
+    result = "f7a8fc4"
+  } else if (semver === "0.20.2") {
+    result = "88a0edb"
+  } else if (semver === "devel" || semver === "stable") {
+    // For semver === "devel" or semver === "stable" we use choosenim
+    executeChoosenim(semver) // devel and stable are moving targets.
+    const nimversion = execSync("nim --version").toString().trim().toLowerCase().split('\n').filter(line => (typeof line === "string" && line.trim() !== ''))
+    for (const s of nimversion) {
+      if (s.startsWith("git hash:")) {
+        result = s.replace("git hash:", "").trim().toLowerCase()
+        break
       }
-    } else {
-      // For semver == "x.x.x" we use Git
-      result = execSync(`git checkout "v${semver}" && git rev-parse --short HEAD`, {cwd: gitTempPath}).toString().trim().toLowerCase()
-      execSync(`git checkout devel`, {cwd: gitTempPath}) // Go back to devel
     }
-    console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
-    return result
   } else {
-    console.warn('gitCommitForVersion received an empty string semver')
-    return null
+    // For semver == "x.x.x" we use Git
+    result = execSync(`git checkout "v${semver}" && git rev-parse --short HEAD`, {cwd: gitTempPath}).toString().trim().toLowerCase()
+    execSync(`git checkout devel`, {cwd: gitTempPath}) // Go back to devel
   }
+  console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
+  return result
 }
 
 
-// Only run if this is an "issue_comment" and comment startsWith commentPrefixes.
+// Only run if this is an "issue_comment" and comment startsWith commentPrefix.
 if (context.eventName === "issue_comment" && context.payload.comment.body.trim().toLowerCase().startsWith(commentPrefix) && (unlockedAllowAll || checkAuthorAssociation()) ) {
   // Check if we have permissions.
   const githubClient  = new GitHub(cfg('github-token'))
@@ -390,7 +354,7 @@ if (context.eventName === "issue_comment" && context.payload.comment.body.trim()
     const githubComment = context.payload.comment.body.trim()
     const codes         = parseGithubComment(githubComment)
     const cmd           = parseGithubCommand(githubComment)
-    let fails           = null
+    let fails           = "devel"
     let works           = null
     let commitsLen      = nimFinalVersions.length
     let issueCommentStr = `@${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })`
@@ -405,7 +369,7 @@ if (context.eventName === "issue_comment" && context.payload.comment.body.trim()
       if (isOk && works === null) {
         works = semver
       }
-      else if (!isOk && fails === null) {
+      else if (!isOk && fails === "devel") {
         fails = semver
       }
       // Append to reports.
@@ -434,80 +398,76 @@ ${ tripleBackticks }\n`
 
 
     // This part is about finding the specific commit that breaks
-    if (fails !== null && works !== null && fails !== works) {
+    if (works !== null) {
       // Get a range of commits between "FAILS..WORKS"
       gitInit()
       const failsCommit = gitCommitForVersion(fails)
       const worksCommit = gitCommitForVersion(works)
-      if (failsCommit !== null && worksCommit !== null && failsCommit !== worksCommit) {
+      if (failsCommit !== null && worksCommit !== null) {
         let commits = gitCommitsBetween(worksCommit, failsCommit)
-        if (commits.length > 10) {
-          commitsLen += commits.length
-          // Split commits in half and check if that commit works or fails,
-          // then repeat the split there until we got less than 10 commits.
-          while (commits.length > 10) {
-            let midIndex = Math.ceil(commits.length / 2)
-            if (midIndex) {
-              console.log(executeChoosenim(commits[midIndex]))
-              let [isOk, output] = executeNim(cmd, codes)
-              if (isOk) {
-                // iff its OK then split 0..mid
-                commits = commits.slice(0, midIndex);
-              } else {
-                // else NOT OK then split mid..end
-                commits = commits.slice(midIndex);
-              }
-            }
-          }
-          let commitsNear = "\n<ul>"
-          for (let commit of commits) {
-            commitsNear += `<li><a href=https://github.com/nim-lang/Nim/commit/${ commit.replace("#", "") } >${ commit }</a>\n`
-          }
-          commitsNear += "</ul>\n"
-          let bugFound = false
-          let index = 0
-          for (let commit of commits) {
-            // Choosenim switch semver
-            console.log(executeChoosenim(commit))
-            // Run code
-            const [isOk, output] = executeNim(cmd, codes)
-            // if this commit works, then previous commit is the breakingCommit
-            if (isOk) {
-              if (!bugFound) {
-                bugFound = true
-              }
-              const breakingCommit = (index > 0) ? commits[index - 1] : commits[index]
-              const [user, mesage, date, files] = gitMetadata(breakingCommit)
-              const comit = breakingCommit.replace('"', '')
-              // Report the breaking commit diagnostics
-              issueCommentStr += `<details><summary><kbd>${comit}</kbd> :arrow_right: :bug:</summary><h3>Diagnostics</h3>\n
-  ${user} introduced a bug at <code>${date}</code> on commit <a href=https://github.com/nim-lang/Nim/commit/${ comit.replace("#", "") } >${ comit }</a> with message:\n
-  ${ tripleBackticks }
-  ${mesage}
-  ${ tripleBackticks }
-  \nThe bug is in the files:\n
-  ${ tripleBackticks }
-  ${files}
-  ${ tripleBackticks }
-  \nThe bug can be in the commits:\n
-  ${commitsNear}
-  (Diagnostics sometimes off-by-one).</details>\n`
-              // Break out of the for
-              break
-            }
-            index++
-          }
-          if (!bugFound) {
-            issueCommentStr += `<details><summary>??? :arrow_right: :bug:</summary><h3>Diagnostics</h3>\n
-  The commit that introduced the bug can not be found, but the bug is in the commits:
-  ${commitsNear}
-  (Can not find the commit because Nim can not be re-built commit-by-commit to bisect).\n</details>\n`
+        commitsLen += commits.length
+        // Split commits in half and check if that commit works or fails,
+        // then repeat the split there until we got less than 10 commits.
+        while (commits.length > 10) {
+          let midIndex = Math.ceil(commits.length / 2)
+          console.log(executeChoosenim(commits[midIndex]))
+          let [isOk, output] = executeNim(cmd, codes)
+          if (isOk) {
+            // iff its OK then split 0..mid
+            commits = commits.slice(0, midIndex);
+          } else {
+            // else NOT OK then split mid..end
+            commits = commits.slice(midIndex);
           }
         }
+        let commitsNear = "\n<ul>"
+        for (let commit of commits) {
+          commitsNear += `<li><a href=https://github.com/nim-lang/Nim/commit/${ commit.replace("#", "") } >${ commit }</a>\n`
+        }
+        commitsNear += "</ul>\n"
+        let bugFound = false
+        let index = 0
+        for (let commit of commits) {
+          // Choosenim switch semver
+          console.log(executeChoosenim(commit))
+          // Run code
+          const [isOk, output] = executeNim(cmd, codes)
+          // if this commit works, then previous commit is the breakingCommit
+          if (isOk) {
+            if (!bugFound) {
+              bugFound = true
+            }
+            const breakingCommit = (index > 0) ? commits[index - 1] : commits[index]
+            const [user, mesage, date, files] = gitMetadata(breakingCommit)
+            const comit = breakingCommit.replace('"', '')
+            // Report the breaking commit diagnostics
+            issueCommentStr += `<details><summary><kbd>${comit}</kbd> :arrow_right: :bug:</summary><h3>Diagnostics</h3>\n
+${user} introduced a bug at <code>${date}</code> on commit <a href=https://github.com/nim-lang/Nim/commit/${ comit.replace("#", "") } >${ comit }</a> with message:\n
+${ tripleBackticks }
+${mesage}
+${ tripleBackticks }
+\nThe bug is in the files:\n
+${ tripleBackticks }
+${files}
+${ tripleBackticks }
+\nThe bug can be in the commits:\n
+${commitsNear}
+(Diagnostics sometimes off-by-one).</details>\n`
+            // Break out of the for
+            break
+          }
+          index++
+        }
+        if (!bugFound) {
+          issueCommentStr += `<details><summary>??? :arrow_right: :bug:</summary><h3>Diagnostics</h3>\n
+The commit that introduced the bug can not be found, but the bug is in the commits:
+${commitsNear}
+(Can not find the commit because Nim can not be re-built commit-by-commit to bisect).\n</details>\n`
+        }
       }
-      else { console.warn(`failsCommit and worksCommit not found, at least 1 working commit and 1 non-working commit are required for Bisect commit-by-commit.\nfailsCommit = ${failsCommit}\tworksCommit = ${worksCommit}`) }
+      else { console.warn("failsCommit and worksCommit not found, at least 1 working commit and 1 non-working commit are required for Bisect commit-by-commit.") }
     }
-    else { console.warn(`works and fails not found, at least 1 working commit and 1 non-working commit are required for Bisect commit-by-commit.\nfails = ${fails}\tworks = ${works}`) }
+    else { console.warn("works and fails not found, at least 1 working commit and 1 non-working commit are required for Bisect commit-by-commit.") }
     // Report results back as a comment on the issue.
     const duration = ((( (new Date()) - startedDatetime) % 60000) / 1000)
     const v = versionInfos()
@@ -518,7 +478,7 @@ ${ tripleBackticks }\n`
 <li><b>NodeJS  </b>\t<code>${ v[3] }</code>
 <li><b>Linux   </b>\t<code>${ v[4] }</code>
 <li><b>Created </b>\t<code>${ context.payload.comment.created_at }</code>
-<li><b>Comments</b>\t<code>${ context.payload.issue.comments }</code>
+<li><b>Issue Comments</b>\t<code>${ context.payload.issue.comments }</code>
 <li><b>Commands</b>\t<code>${ cmd }</code></ul></details>\n
 :robot: Bug found in <code>${ formatDuration(duration) }</code> bisecting <code>${commitsLen}</code> commits at <code>${ Math.round(commitsLen / duration) }</code> commits per second.`
     addIssueComment(githubClient, issueCommentStr)
