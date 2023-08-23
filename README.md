@@ -114,6 +114,11 @@ echo cstring.fuzzing
 ```
 
 
+# Multiple files
+
+- Example https://github.com/nim-lang/Nim/issues/22543#issuecomment-1690562542
+
+
 # Requisites
 
 - `jiro4989/setup-nim-action` to setup Nim.
