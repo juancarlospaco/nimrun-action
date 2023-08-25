@@ -128,6 +128,14 @@ then `./temp2.nim`, `./temp3.nim`, `./temp4.nim`, etc.
 - Example https://github.com/nim-lang/Nim/issues/22543#issuecomment-1690562542
 
 
+# Arbitrary text comment
+
+Comment must start with the `!nim ` because it checks the first line only for performance for fast builds,
+you can have any arbitrary text and links **after** the code blocks (or write the text on another comment).
+
+- Example https://github.com/nim-lang/Nim/pull/22559#issuecomment-1693758090
+
+
 # Requisites
 
 - `jiro4989/setup-nim-action` to setup Nim.
