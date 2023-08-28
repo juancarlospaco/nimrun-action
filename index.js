@@ -147,7 +147,7 @@ async function addIssueComment(githubClient, issueCommentBody) {
 function parseGithubComment(comment) {
   console.assert(typeof comment === "string", `comment must be string, but got ${ typeof comment }`)
   const tokens = marked.Lexer.lex(comment)
-  const allowedFileExtensions = ["c", "cpp", "c++", "h", "hpp", "js", "json", "txt"]
+  const allowedFileExtensions = ["c", "cpp", "c++", "h", "hpp", "js", "json", "txt", "sh"]
   let result = ""
   for (const token of tokens) {
     if (token.type === 'code' && token.text.length > 0 && token.lang !== undefined) {
@@ -265,6 +265,21 @@ function executeNim(cmd, codes) {
     console.warn('executeNim received an empty string code')
     return [false, ""]
   }
+}
+
+
+function executeSh() {
+  let result = ""
+  if (fs.existsSync(`${ process.cwd() }/temp.sh`)) {
+    try {
+      result = execSync(`nimble --noColor --noSslCheck refresh && sh ${ process.cwd() }/temp.sh`).toString().trim()
+    } catch (error) {
+      console.warn(error)
+      result = ""
+    }
+    result = result.split('\n').filter(line => line.trim() !== '').join('\n') // Remove empty lines
+  }
+  return result
 }
 
 
@@ -407,6 +422,8 @@ if (context.eventName === "issue_comment" && context.payload.comment.body.trim()
     // Check the same code agaisnt all versions of Nim from devel to 1.0
     for (let semver of nimFinalVersions) {
       console.log(executeChoosenim(semver))
+      const shOutput = executeSh()
+      console.log(shOutput)
       const started  = new Date()
       let [isOk, output] = executeNim(cmd, codes)
       const finished = new Date()
