@@ -71,6 +71,7 @@ Used by Nim official repo:
 
 - Iff using ARC/ORC/AtomicARC and `-d:useMalloc` then uses Valgrind.
 - Example `!nim c --gc:arc -d:useMalloc` (automatically sets `--debugger:native` etc).
+- Example https://github.com/nim-lang/Nim/issues/22672#issuecomment-1711674994
 - https://github.com/juancarlospaco/nimrun-action/pull/4
 
 
