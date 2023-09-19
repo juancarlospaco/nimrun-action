@@ -165,3 +165,4 @@ you can have any arbitrary text and links **after** the code blocks (or write th
 :star: [@gabbhack](https://github.com/gabbhack '2023-07-07')	
 :star: [@termermc](https://github.com/termermc '2023-07-10')	
 :star: [@solarizedalias](https://github.com/solarizedalias '2023-07-15')	
+:star: [@jmgomez](https://github.com/jmgomez '2023-09-19')	
