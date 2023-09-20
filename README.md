@@ -64,7 +64,8 @@ jobs:
 Used by Nim official repo:
 
 - https://github.com/nim-lang/Nim/issues/16933#issuecomment-1620907872
-- https://github.com/nim-lang/Nim/pull/22157#issuecomment-1620858856
+- Cpp [https://github.com/nim-lang/Nim/pull/22157#issuecomment-1620858856](https://github.com/nim-lang/Nim/issues/16933#issuecomment-1620858522)
+- JavaScript https://github.com/nim-lang/Nim/issues/22687#issuecomment-1723406204
 
 
 # Valgrind
