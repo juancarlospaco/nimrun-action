@@ -41,15 +41,20 @@ on:
   issue_comment:
     types: created
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  bisects:
+    if: |
+      github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '!nim ') && github.event.issue.pull_request == null && github.event.comment.author_association != 'NONE'
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, windows-latest, macos-latest]
+    name: ${{ matrix.platform }}-bisects
+    runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
       - uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: 'devel'
-      - name: Install Dependencies
-        run: sudo apt-get install --no-install-recommends -yq valgrind
       - uses: juancarlospaco/nimrun-action@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
