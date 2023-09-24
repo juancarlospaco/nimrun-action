@@ -21,7 +21,6 @@ const choosenimNoAnal  = {env: {...process.env, CHOOSENIM_NO_ANALYTICS: "1", SOU
 const valgrindLeakChck = {env: {...process.env, VALGRIND_OPTS: "--tool=memcheck --leak-check=full --show-leak-kinds=all --undef-value-errors=yes --track-origins=yes --show-error-list=yes --keep-debuginfo=yes --show-emwarns=yes --demangle=yes --smc-check=none --num-callers=9 --max-threads=9"}}
 const debugGodModes    = ["araq"]
 const unlockedAllowAll = true  // true == Users can Bisect  |  false == Only Admins can Bisect.
-const commentPrefix    = "!nim "
 let   nimFileCounter   = 0
 
 
@@ -79,6 +78,24 @@ function getFilesizeInBytes(filename) {
 }
 
 
+function cleanIR(inputText) {
+  // We need to save chars, remove comments, remove empty lines, convert all mixed indentation into 1 space indentation.
+  const mixedIndentRegex = /^( |\t)+/;
+  const result = inputText.trim().replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter(line => (line.trim() !== '' && !line.startsWith("#undef "))).map((line) => {
+    const match = line.match(mixedIndentRegex);
+    if (match) {
+      const mixedIndent = match[0];
+      const indentationLevel = mixedIndent.includes('\t') ? mixedIndent.length : mixedIndent.length / 4;
+      const tabbedLine = line.replace(mixedIndentRegex, ' '.repeat(indentationLevel));
+      return tabbedLine;
+    } else {
+      return line // Line has consistent indentation, keep it unchanged
+    }
+  }).join('\n')
+  return result
+}
+
+
 function checkAuthorAssociation() {
   const authorPerm = context.payload.comment.author_association.trim().toLowerCase()
   let result = (authorPerm === "owner" || authorPerm === "collaborator" || authorPerm === "member" || debugGodModes.includes(context.payload.comment.user.login.toLowerCase()))
@@ -114,10 +131,8 @@ function semverParser(str) {
 function versionInfos() {
   return [
     semverParser(execSync("gcc --version").toString()),
-    semverParser(execSync("ldd --version").toString()),
-    semverParser(execSync("valgrind --version").toString()),
+    semverParser(execSync("clang --version").toString()),
     semverParser(execSync("node --version").toString()),
-    semverParser(execSync("uname --kernel-release").toString()),
   ]
 }
 
@@ -199,11 +214,12 @@ function parseGithubCommand(comment) {
       result = result + " -d:nodejs -d:nimExperimentalAsyncjsThen -d:nimExperimentalJsfetch "
     }
     const useArc      = hasArc(result)
-    const useValgrind = useArc && hasMalloc(result)
+    const useValgrind = useArc && hasMalloc(result) && process.env.RUNNER_OS !== "Windows"
     if (useArc) {
       result = result + " -d:nimArcDebug -d:nimArcIds "
     }
     if (useValgrind) {
+      console.log(installValgrind())
       result = result + " -d:nimAllocPagesViaMalloc -d:useSysAssert -d:useGcAssert -d:nimLeakDetector --debugger:native --debuginfo:on "
     } else {
       result = result + " --run "
@@ -285,6 +301,16 @@ function executeAstGen(codes) {
 }
 
 
+function installValgrind() {
+  try {
+    return execSync((process.env.RUNNER_OS === "Linux" ? "sudo apt-get -yq update && sudo apt-get install --no-install-recommends -yq valgrind" : "brew update && brew install valgrind")).toString().trim()
+  } catch (error) {
+    console.warn(error)
+    return ""
+  }
+}
+
+
 function getIR() {
   let result = ""
   // Target C
@@ -300,8 +326,7 @@ function getIR() {
     result = fs.readFileSync(temporaryOutFile).toString().trim()
   }
   // Clean outs
-  result = result.split('\n').filter(line => line.trim() !== '').join('\n') // Remove empty lines
-  result = result.replace(/\/\*[\s\S]*?\*\//g, '').trim()                   // Remove comments
+  result = cleanIR(result)
   console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
   return result
 }
@@ -392,7 +417,7 @@ function gitCommitForVersion(semver) {
 
 
 // Only run if this is an "issue_comment" and comment startsWith commentPrefixes.
-if (context.eventName === "issue_comment" && context.payload.comment.body.trim().toLowerCase().startsWith(commentPrefix) && (unlockedAllowAll || checkAuthorAssociation()) ) {
+if (context.payload.comment.body.trim().toLowerCase().startsWith("!nim ") && (unlockedAllowAll || checkAuthorAssociation()) ) {
   // Check if we have permissions.
   const githubClient  = new GitHub(cfg('github-token'))
   // Add Reaction of "Eyes" as seen.
@@ -403,14 +428,15 @@ if (context.eventName === "issue_comment" && context.payload.comment.body.trim()
     let fails           = null
     let works           = null
     let commitsLen      = nimFinalVersions.length
-    let issueCommentStr = `@${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })`
+    const osEmoji       = process.env.RUNNER_OS === "Linux" ? ":penguin:" : process.env.RUNNER_OS === "Windows" ? ":window:" : ":apple:"
+    let issueCommentStr = `<details><summary>${ osEmoji } ${ process.env.RUNNER_OS } bisect by @${ context.actor } (${ context.payload.comment.author_association.toLowerCase() })</summary>`
     // Check the same code agaisnt all versions of Nim from devel to 1.0
     for (let semver of nimFinalVersions) {
       console.log(executeChoosenim(semver))
       const started  = new Date()
       let [isOk, output] = executeNim(cmd, codes)
       const finished = new Date()
-      const thumbsUp = (isOk ? " :+1: $\\color{green}\\textbf{\\large OK}$ " : " :-1: FAIL ")
+      const thumbsUp = (isOk ? ":+1: OK" : ":-1: FAIL")
       // Remember which version works and which version breaks.
       if (isOk && works === null) {
         works = semver
@@ -423,18 +449,17 @@ if (context.eventName === "issue_comment" && context.payload.comment.body.trim()
 ${ tripleBackticks }
 ${ output.replace(/^==\d+== /gm, '').trim() }
 ${ tripleBackticks }\n
+<h3>IR</h3><b>Compiled filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>\n
+${ tripleBackticks }cpp
+${ getIR() }
+${ tripleBackticks }\n
 <h3>Stats</h3><ul>
 <li><b>Started</b>\t<code>${ started.toISOString().split('.').shift()  }</code>
 <li><b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code>
 <li><b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000)) }</code></ul>\n`
       // Iff NOT Ok add AST and IR info for debugging purposes.
       if (!isOk) {
-        issueCommentStr += `
-<h3>IR</h3><b>Compiled filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>\n
-${ tripleBackticks }cpp
-${ getIR() }
-${ tripleBackticks }\n
-<h3>AST</h3>\n
+        issueCommentStr += `<h3>AST</h3>\n
 ${ tripleBackticks }nim
 ${ executeAstGen(codes) }
 ${ tripleBackticks }\n`
@@ -522,15 +547,13 @@ ${ tripleBackticks }\n`
     const duration = ((( (new Date()) - startedDatetime) % 60000) / 1000)
     const v = versionInfos()
     issueCommentStr += `<details><summary>Stats</summary><ul>
-<li><b>GCC     </b>\t<code>${ v[0] }</code>
-<li><b>LibC    </b>\t<code>${ v[1] }</code>
-<li><b>Valgrind</b>\t<code>${ v[2] }</code>
-<li><b>NodeJS  </b>\t<code>${ v[3] }</code>
-<li><b>Linux   </b>\t<code>${ v[4] }</code>
-<li><b>Created </b>\t<code>${ context.payload.comment.created_at }</code>
+<li><b>GCC</b>\t<code>${ v[0] }</code>
+<li><b>Clang</b>\t<code>${ v[1] }</code>
+<li><b>NodeJS</b>\t<code>${ v[2] }</code>
+<li><b>Created</b>\t<code>${ context.payload.comment.created_at }</code>
 <li><b>Comments</b>\t<code>${ context.payload.issue.comments }</code>
 <li><b>Commands</b>\t<code>${ cmd }</code></ul></details>\n
-:robot: Bug found in <code>${ formatDuration(duration) }</code> bisecting <code>${commitsLen}</code> commits at <code>${ Math.round(commitsLen / duration) }</code> commits per second.`
+:robot: Bug found in <code>${ formatDuration(duration) }</code> bisecting <code>${commitsLen}</code> commits at <code>${ Math.round(commitsLen / duration) }</code> commits per second</details>`
     addIssueComment(githubClient, issueCommentStr)
   }
   else { console.warn("githubClient.addReaction failed, repo permissions error?.") }
