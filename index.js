@@ -265,8 +265,10 @@ function executeChoosenim(semver) {
 function executeChoosenimRemove(semver) {
   console.assert(typeof semver === "string", `semver must be string, but got ${ typeof semver }`)
   // Clean out already checked Nim versions to not fill up the disk, leave stable and devel alone.
-  if (semver.length > 0 && !["devel", "stable"].includes(semver)) {
+  if (semver.length > 0 && semver !== "devel") {
     try {
+      // Can not remove the Nim version currently active, so switch to devel.
+      console.log(execSync("choosenim --noColor --yes devel", choosenimNoAnal).toString())
       return execSync(`choosenim --noColor --yes remove "${semver}"`, choosenimNoAnal).toString().trim()
     } catch (error) {
       console.warn(error)
