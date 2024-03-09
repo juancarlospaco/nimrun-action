@@ -267,7 +267,7 @@ function executeChoosenimRemove(semver) {
   // Clean out already checked Nim versions to not fill up the disk, leave stable and devel alone.
   if (semver.length > 0 && !["devel", "stable"].includes(semver)) {
     try {
-      return execSync(`choosenim --noColor --skipClean --yes remove "${semver}"`, choosenimNoAnal).toString().trim()
+      return execSync(`choosenim --noColor --yes remove "${semver}"`, choosenimNoAnal).toString().trim()
     } catch (error) {
       console.warn(error)
       return ""
