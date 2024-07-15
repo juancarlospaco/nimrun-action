@@ -68,6 +68,7 @@ jobs:
 
 Used by Nim official repo:
 
+- **https://github.com/nim-lang/Nim/issues/23836**
 - **https://github.com/nim-lang/Nim/issues/23586**
 - https://github.com/nim-lang/Nim/issues/16933#issuecomment-1620907872
 - Cpp [https://github.com/nim-lang/Nim/pull/22157#issuecomment-1620858856](https://github.com/nim-lang/Nim/issues/16933#issuecomment-1620858522)
