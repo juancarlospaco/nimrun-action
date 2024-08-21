@@ -47,9 +47,9 @@ function formatDuration(seconds) {
       const hours   = Math.floor(((seconds % 31536000) % 86400) / 3600);
       const minutes = Math.floor(((seconds % 31536000) % 86400) %  60);
       const second  = (((seconds % 31536000) % 86400)  % 3600)  % 0;
-      const y = (hours   > 0) ? hours   + " hours"   : "";
-      const z = (minutes > 0) ? minutes + " minutes" : "";
-      const u = (second  > 0) ? second  + " seconds" : "";
+      const y = (hours   > 0) ? hours   + " hs"   : "";
+      const z = (minutes > 0) ? minutes + " mins" : "";
+      const u = (second  > 0) ? second  + " secs" : "";
       result = y + z + u
   }
   console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
