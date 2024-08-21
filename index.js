@@ -396,18 +396,26 @@ function gitCommitForVersion(semver) {
   let result = null
   if (typeof semver === "string" && semver.length > 0) {
     semver     = semver.trim().toLowerCase()
-    if (semver === "2.0.0") {
+    if (semver === "2.0.8") {
+      result = "5935c3b"
+    } else if (semver === "2.0.0") {
       result = "a488067"
+    } else if (semver === "1.6.20") {
+      result = "19fdbfc"
     } else if (semver === "1.6.0") {
       result = "727c637"
+    } else if (semver === "1.4.8") {
+      result = "44e653a"
     } else if (semver === "1.4.0") {
       result = "018ae96"
+    } else if (semver === "1.2.18") {
+      result = "8a5c8d3"
     } else if (semver === "1.2.0") {
       result = "7e83adf"
+    } else if (semver === "1.0.10") {
+      result = "0ca09f6"
     } else if (semver === "1.0.0") {
       result = "f7a8fc4"
-    } else if (semver === "0.20.2") {
-      result = "88a0edb"
     } else if (semver === "devel" || semver === "stable") {
       // For semver === "devel" or semver === "stable" we use choosenim
       executeChoosenim(semver) // devel and stable are moving targets.
