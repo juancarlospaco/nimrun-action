@@ -471,7 +471,7 @@ if (context.payload.comment.body.trim().toLowerCase().startsWith("!nim ") && (un
       // Append to reports.
       issueCommentStr += `<details><summary><kbd>${semver}</kbd>\t${thumbsUp}</summary><h3>Output</h3>\n
 ${ tripleBackticks }
-${ output.replace(/^==\d+== /gm, '').trim() }
+${ output.trim().split('\n').filter(line => line.trim() !== '').join('\n').substring(8192) }
 ${ tripleBackticks }\n
 <h3>IR</h3><b>Compiled filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>\n
 ${ tripleBackticks }cpp
