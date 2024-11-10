@@ -18,9 +18,7 @@ const temporaryOutFile = temporaryFile.replace(".nim", "")
 const extraFlags       = ` -d:nimDebug -d:nimDebugDlOpen -d:ssl -d:nimDisableCertificateValidation --forceBuild:on --colors:off --verbosity:0 --hints:off --lineTrace:off --nimcache:${ process.cwd() } --out:${temporaryOutFile} ${temporaryFile}`
 const nimFinalVersions = ["devel", "stable", "2.0.10", "2.0.0", "1.6.20", "1.4.8", "1.2.18", "1.0.10"]
 const choosenimNoAnal  = {env: {...process.env, CHOOSENIM_NO_ANALYTICS: "1", SOURCE_DATE_EPOCH: Math.floor(Date.now() / 1000).toString()}}  // SOURCE_DATE_EPOCH is same in all runs.
-const valgrindLeakChck = {env: {...process.env, VALGRIND_OPTS: "--quiet --tool=memcheck --leak-check=full --show-leak-kinds=all --errors-for-leak-kinds=all --undef-value-errors=yes --track-origins=no --show-error-list=no --keep-debuginfo=yes --show-emwarns=yes --demangle=yes --smc-check=none --num-callers=9 --max-threads=9"}}
-const debugGodModes    = ["araq"]
-const unlockedAllowAll = true  // true == Users can Bisect  |  false == Only Admins can Bisect.
+const valgrindLeakChck = {env: {...process.env, VALGRIND_OPTS: "--quiet --tool=memcheck --leak-check=full --show-leak-kinds=all --errors-for-leak-kinds=all --undef-value-errors=yes --track-origins=yes --show-error-list=yes --keep-debuginfo=yes --show-emwarns=yes --demangle=yes --smc-check=none --num-callers=9 --max-threads=9"}}
 let   nimFileCounter   = 0
 
 
@@ -30,11 +28,6 @@ function cfg(key) {
   console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
   return result;
 };
-
-
-function indentString(str, count = 2, indent = ' ') {
-  return str.replace(/^/gm, indent.repeat(count))
-}
 
 
 function formatDuration(seconds) {
@@ -77,27 +70,9 @@ function getFilesizeInBytes(filename) {
 }
 
 
-function cleanIR(inputText) {
-  // We need to save chars, remove comments, remove empty lines, convert all mixed indentation into 1 space indentation.
-  const mixedIndentRegex = /^( |\t)+/;
-  const result = inputText.trim().replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter(line => (line.trim() !== '' && !line.startsWith("#undef ") && !line.startsWith("#define NIM_INTBITS") && !line.startsWith("#define FX_"))).map((line) => {
-    const match = line.match(mixedIndentRegex);
-    if (match) {
-      const mixedIndent = match[0];
-      const indentationLevel = mixedIndent.includes('\t') ? mixedIndent.length : mixedIndent.length / 4;
-      const tabbedLine = line.replace(mixedIndentRegex, ' '.repeat(indentationLevel));
-      return tabbedLine;
-    } else {
-      return line // Line has consistent indentation, keep it unchanged
-    }
-  }).join('\n')
-  return result
-}
-
-
 function checkAuthorAssociation() {
   const authorPerm = context.payload.comment.author_association.trim().toLowerCase()
-  let result = (authorPerm === "owner" || authorPerm === "collaborator" || authorPerm === "member" || debugGodModes.includes(context.payload.comment.user.login.toLowerCase()))
+  let result = (authorPerm === "owner" || authorPerm === "collaborator" || authorPerm === "member" || context.payload.comment.user.login.toLowerCase() === "juancarlospaco")
   console.assert(typeof result === "boolean", `result must be boolean, but got ${ typeof result }`)
   return result
 };
@@ -149,11 +124,12 @@ async function addReaction(githubClient, reaction) {
 
 async function addIssueComment(githubClient, issueCommentBody) {
   console.assert(typeof issueCommentBody === "string", `issueCommentBody must be string, but got ${ typeof issueCommentBody }`)
+  console.log(`BODY LEN = ${ issueCommentBody.length } (${ 65536 - issueCommentBody.length } Chars left)`)
   return (await githubClient.issues.createComment({
     issue_number: context.issue.number,
     owner       : context.repo.owner,
     repo        : context.repo.repo,
-    body        : issueCommentBody.trim(),
+    body        : issueCommentBody,  // GitHub max body len .substring(65536)
   }) !== undefined)
 };
 
@@ -300,23 +276,6 @@ function executeNim(cmd, codes) {
 }
 
 
-function executeAstGen(codes) {
-  console.assert(typeof codes === "string", `codes must be string, but got ${ typeof codes }`)
-  if (typeof codes === "string" && codes.length > 0) {
-    fs.writeFileSync(temporaryFile2, `dumpAstGen:\n${ indentString(codes) }`)
-    try {
-      return execSync(`nim check --verbosity:0 --hints:off --warnings:off --colors:off --lineTrace:off --forceBuild:on --import:std/macros ${temporaryFile2}`).toString().trim()
-    } catch (error) {
-      console.warn(error)
-      return ""
-    }
-  } else {
-    console.warn('executeAstGen received an empty string code')
-    return ""
-  }
-}
-
-
 function installValgrind() {
   try {
     return execSync((process.env.RUNNER_OS === "Linux" ? "sudo apt-get -yq update && sudo apt-get install --no-install-recommends -yq valgrind" : "brew update && brew install valgrind")).toString().trim()
@@ -324,27 +283,6 @@ function installValgrind() {
     console.warn(error)
     return ""
   }
-}
-
-
-function getIR() {
-  let result = ""
-  // Target C
-  if (fs.existsSync(temporaryFileAsm)) {
-    result = fs.readFileSync(temporaryFileAsm).toString().trim()
-  }
-  // Target C++
-  else if (fs.existsSync(temporaryFileAsm + "pp")) {
-    result = fs.readFileSync(temporaryFileAsm + "pp").toString().trim()
-  }
-  // Target JS
-  else if (fs.existsSync(temporaryOutFile)) {
-    result = fs.readFileSync(temporaryOutFile).toString().trim()
-  }
-  // Clean outs
-  result = cleanIR(result)
-  console.assert(typeof result === "string", `result must be string, but got ${ typeof result }`)
-  return result
 }
 
 
@@ -363,9 +301,9 @@ function gitMetadata(commit) {
   if (typeof commit === "string" && commit.length > 0) {
     console.log(execSync(`git checkout ${ commit.replace("#", "") }`, {cwd: gitTempPath}).toString())
     const user   = execSync("git log -1 --pretty=format:'%an'", {cwd: gitTempPath}).toString().trim().toLowerCase()
-    const mesage = execSync("git log -1 --pretty='%B'", {cwd: gitTempPath}).toString().trim()
+    const mesage = execSync("git log -1 --pretty='%B'", {cwd: gitTempPath}).toString().trim().replace(tripleBackticks, ' ').substring(1024)
     const date   = execSync("git log -1 --pretty=format:'%ai'", {cwd: gitTempPath}).toString().trim().toLowerCase()
-    const files  = execSync("git diff-tree --no-commit-id --name-only -r HEAD", {cwd: gitTempPath}).toString().trim()
+    const files  = execSync("git diff-tree --no-commit-id --name-only -r HEAD", {cwd: gitTempPath}).toString().trim().substring(1024)
     return [user, mesage, date, files]
   } else {
     console.warn('gitMetadata received an empty string commit')
@@ -443,7 +381,7 @@ function gitCommitForVersion(semver) {
 
 
 // Only run if this is an "issue_comment" and comment startsWith commentPrefixes.
-if (context.payload.comment.body.trim().toLowerCase().startsWith("!nim ") && (unlockedAllowAll || checkAuthorAssociation()) ) {
+if (context.payload.comment.body.trim().toLowerCase().startsWith("!nim ") && checkAuthorAssociation()) {
   // Check if we have permissions.
   const githubClient  = new GitHub(cfg('github-token'))
   // Add Reaction of "Eyes" as seen.
@@ -473,24 +411,10 @@ if (context.payload.comment.body.trim().toLowerCase().startsWith("!nim ") && (un
       // Append to reports.
       issueCommentStr += `<details><summary><kbd>${semver}</kbd>\t${thumbsUp}</summary><h3>Output</h3>\n
 ${ tripleBackticks }
-${ output.trim().split('\n').filter(line => line.trim() !== '').join('\n').substring(8192) }
+${ output.trim().split('\n').filter(line => line.trim() !== '').join('\n').substring(4098) }
 ${ tripleBackticks }\n
-<h3>IR</h3><b>Compiled filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>\n
-${ tripleBackticks }cpp
-${ getIR() }
-${ tripleBackticks }\n
-<h3>Stats</h3><ul>
-<li><b>Started</b>\t<code>${ started.toISOString().split('.').shift()  }</code>
-<li><b>Finished</b>\t<code>${ finished.toISOString().split('.').shift() }</code>
-<li><b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000)) }</code></ul>\n`
-      // Iff NOT Ok add AST and IR info for debugging purposes.
-      if (!isOk) {
-        issueCommentStr += `<h3>AST</h3>\n
-${ tripleBackticks }nim
-${ executeAstGen(codes) }
-${ tripleBackticks }\n`
-      }
-      issueCommentStr += "</details>\n"
+<b>Filesize</b>\t<code>${ formatSizeUnits(getFilesizeInBytes(temporaryOutFile)) }</code>\t
+<b>Duration</b>\t<code>${ formatDuration((((finished - started) % 60000) / 1000)) }</code></ul></details>\n`
       // Clean out already checked Nim versions to not fill up the disk.
       console.log(executeChoosenimRemove(semver))
     }
@@ -548,7 +472,7 @@ ${ tripleBackticks }\n`
               issueCommentStr += `<details><summary><kbd>${comit}</kbd> :arrow_right: :bug:</summary><h3>Diagnostics</h3>\n
   ${user} introduced a bug at <code>${date}</code> on commit <a href=https://github.com/nim-lang/Nim/commit/${ comit.replace("#", "") } >${ comit }</a> with message:\n
   ${ tripleBackticks }
-  ${mesage}
+  ${ mesage }
   ${ tripleBackticks }
   \nThe bug is in the files:\n
   ${ tripleBackticks }
@@ -586,7 +510,7 @@ ${ tripleBackticks }\n`
 <li><b>Comments</b>\t<code>${ context.payload.issue.comments }</code>
 <li><b>Commands</b>\t<code>${ cmd }</code></ul></details>\n
 :robot: Bug found in <code>${ formatDuration(duration) }</code> bisecting <code>${commitsLen}</code> commits at <code>${ Math.round(commitsLen / duration) }</code> commits per second</details>`
-    addIssueComment(githubClient, issueCommentStr)
+    addIssueComment(githubClient, issueCommentStr.trim())
   }
   else { console.warn("githubClient.addReaction failed, repo permissions error?.") }
 }
