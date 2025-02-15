@@ -334,8 +334,8 @@ function gitCommitForVersion(semver) {
   let result = null
   if (typeof semver === "string" && semver.length > 0) {
     semver     = semver.trim().toLowerCase()
-    if (semver === "2.2.0") {
-      result = "78983f1"
+    if (semver === "2.2.2") {
+      result = "6c34f62"
     } else if (semver === "2.0.10") {
       result = "e941ee1"
     } else if (semver === "2.0.0") {
