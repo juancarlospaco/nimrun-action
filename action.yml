@@ -5,7 +5,7 @@ inputs:
     description: 'GitHub token'
     required:    true
 runs:
-  using: 'node16'
+  using: 'node24'
   main:  'index.js'
 branding:
   icon:  'eye'
