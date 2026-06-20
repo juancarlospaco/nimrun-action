@@ -6,6 +6,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # http://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners
     steps:
     - uses: actions/checkout@v5
     - uses: jiro4989/setup-nim-action@v1
